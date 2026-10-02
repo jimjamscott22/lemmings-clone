@@ -1,4 +1,6 @@
+import { EXIT_TIME } from "../config";
 import type { Lemming } from "../entities/Lemming";
+import { isDrowning } from "../entities/states/swimming";
 import { PALETTE } from "./palette";
 
 /**
@@ -49,6 +51,33 @@ export function drawLemming(ctx: CanvasRenderingContext2D, l: Lemming): void {
       // Kneeling hammer tap, with the plank being laid
       rect(2, frame === 0 ? -6 : -4, 2, 1, PALETTE.lemmingSkin);
       rect(-3, -1, 7, 1, PALETTE.bridge);
+      break;
+    }
+
+    case "swimming":
+      // Only the head shows above the surface; arms paddle, or reach up once sinking.
+      rect(-2, -10, 4, 2, PALETTE.lemmingHair);
+      rect(1, -9, 2, 1, PALETTE.lemmingHair);
+      rect(-1, -8, 3, 1, PALETTE.lemmingSkin);
+      if (isDrowning(l)) {
+        rect(-3, -12, 1, 3, PALETTE.lemmingSkin);
+        rect(3, -12 + frame, 1, 3, PALETTE.lemmingSkin);
+      } else {
+        rect(frame === 0 ? 2 : 3, -7, 2, 1, PALETTE.lemmingSkin);
+        rect(frame === 0 ? -4 : -3, -7, 2, 1, PALETTE.lemmingSkin);
+      }
+      break;
+
+    case "exiting": {
+      // Fade into the doorway with a little hop of joy.
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, 1 - l.stateTime / EXIT_TIME);
+      ctx.translate(0, -Math.round(Math.sin((l.stateTime / EXIT_TIME) * Math.PI) * 3));
+      drawBody(rect);
+      rect(-3, -11, 1, 3, PALETTE.lemmingSkin);
+      rect(2, -11, 1, 3, PALETTE.lemmingSkin);
+      rect(-1, -2, 3, 2, PALETTE.lemmingBodyDark);
+      ctx.restore();
       break;
     }
 

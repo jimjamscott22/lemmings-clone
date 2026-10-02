@@ -1,5 +1,6 @@
 import { TILE_SIZE } from "../config";
 import type { Grid } from "../world/Grid";
+import { TileType } from "../world/TileType";
 import { STATES, type LemmingState, type StateName } from "./states";
 import { toTile, type World } from "./World";
 
@@ -7,6 +8,9 @@ import { toTile, type World } from "./World";
 export type Fate = "active" | "saved" | "lost";
 
 let nextId = 1;
+
+/** How many stacked tiles a lemming can climb out of before it counts as crushed. */
+const MAX_ESCAPE_TILES = 3;
 
 /**
  * A single lemming. Position is the centre-bottom of its feet, in canvas pixels.
@@ -69,18 +73,31 @@ export class Lemming {
     if (this.done) return;
     this.stateTime += dt;
     this.escapeTerrain(world);
+    this.checkTriggers(world);
     this.state.update(this, world, dt);
   }
 
+  /** Tiles that take over whatever the lemming was doing: the goal and water. */
+  private checkTriggers(world: World): void {
+    const name = this.state.name;
+    if (name === "exiting") return;
+    const tile = world.grid.get(this.col, this.bodyRow);
+    if (tile === TileType.Goal) this.setState("exiting", world);
+    else if (tile === TileType.Water && name !== "swimming") this.setState("swimming", world);
+  }
+
   /**
-   * If terrain appeared where the body is (a bridge laid on top of it), pop up onto that tile
-   * as long as there's room above. Lemmings sealed in completely are left where they are.
+   * If terrain appeared where the body is (a bridge laid on top of it — possibly several in one
+   * tick when builders share a column), climb to the first open tile above, up to
+   * MAX_ESCAPE_TILES. A lemming sealed in deeper than that is crushed.
    */
   private escapeTerrain(world: World): void {
     const { grid } = world;
-    const row = this.bodyRow;
-    if (!grid.isSolid(this.col, row) || grid.isSolid(this.col, row - 1)) return;
-    this.y = row * TILE_SIZE;
+    let row = this.bodyRow;
+    if (!grid.isSolid(this.col, row)) return;
+    for (let i = 0; i < MAX_ESCAPE_TILES && grid.isSolid(this.col, row); i++) row--;
+    if (grid.isSolid(this.col, row)) return this.retire("lost");
+    this.y = (row + 1) * TILE_SIZE;
     this.vy = 0;
     if (this.state.name === "falling" || this.state.name === "jumping") this.setState("walking", world);
   }

@@ -4,7 +4,7 @@ import type { TilePoint } from "../world/Level";
 import { TILE_PROPS, TileType } from "../world/TileType";
 import { TOOL_ORDER, TOOLS, type ToolId } from "../tools/tools";
 
-function byId<T extends HTMLElement>(id: string): T {
+export function byId<T extends HTMLElement>(id: string): T {
   const el = document.getElementById(id);
   if (!el) throw new Error(`Missing #${id} in index.html`);
   return el as T;
@@ -16,6 +16,14 @@ export class Hud {
   private readonly tileEl = byId("hud-tile");
   private readonly fpsEl = byId("hud-fps");
   private readonly pausedEl = byId("hud-paused");
+  private readonly fastEl = byId("hud-fast");
+  private readonly statEls = {
+    out: byId("hud-out"),
+    saved: byId("hud-saved"),
+    need: byId("hud-need"),
+    lost: byId("hud-lost"),
+  };
+  private lastStatsKey = "";
   private readonly legendEl = byId<HTMLUListElement>("hud-legend");
   private readonly toolsEl = byId("hud-tools");
   private readonly toolButtons = new Map<ToolId, { button: HTMLButtonElement; count: HTMLElement }>();
@@ -51,6 +59,17 @@ export class Hud {
 
   setPaused(paused: boolean): void {
     this.pausedEl.classList.toggle("hidden", !paused);
+  }
+
+  setFast(fast: boolean): void {
+    this.fastEl.classList.toggle("hidden", !fast);
+  }
+
+  setStats(stats: { out: number; saved: number; need: number; lost: number }): void {
+    const key = `${stats.out},${stats.saved},${stats.need},${stats.lost}`;
+    if (key === this.lastStatsKey) return;
+    this.lastStatsKey = key;
+    for (const k of ["out", "saved", "need", "lost"] as const) this.statEls[k].textContent = String(stats[k]);
   }
 
   setHoverTile(grid: Grid, tile: TilePoint | null): void {

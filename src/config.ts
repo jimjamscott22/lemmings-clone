@@ -30,3 +30,16 @@ export const JUMP_FORWARD_SPEED = 40;
 export const DIG_TIME = 0.8;
 /** Seconds to lay one bridge block. */
 export const BUILD_TIME = 0.6;
+
+/* Hazards and the exit. */
+
+/** Paddling speed at the water's surface. */
+export const SWIM_SPEED = 10;
+/** Seconds a lemming can stay afloat before it starts to sink. */
+export const SWIM_ENDURANCE = 2.5;
+/** Seconds of sinking before a drowning lemming is gone. */
+export const DROWN_TIME = 0.8;
+/** How far below the surface a swimmer's feet hang (head stays above water). */
+export const FLOAT_DEPTH = 7;
+/** Seconds for the walk-into-the-door animation. */
+export const EXIT_TIME = 0.5;

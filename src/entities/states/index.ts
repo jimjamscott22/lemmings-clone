@@ -1,8 +1,10 @@
 import { building } from "./building";
 import { digging } from "./digging";
+import { exiting } from "./exiting";
 import { falling } from "./falling";
 import { jumping } from "./jumping";
 import type { LemmingState, StateName } from "./LemmingState";
+import { swimming } from "./swimming";
 import { walking } from "./walking";
 
 export type { LemmingState, StateName } from "./LemmingState";
@@ -14,4 +16,6 @@ export const STATES: Readonly<Record<StateName, LemmingState>> = {
   jumping,
   digging,
   building,
+  swimming,
+  exiting,
 };

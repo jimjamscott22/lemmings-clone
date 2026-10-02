@@ -59,6 +59,35 @@ describe("Lemming state machine", () => {
     expect(tileX(lemming.x)).toBe(6);
   });
 
+  it("climbs out of several tiles stacked on it in one tick", () => {
+    const { world, lemming } = setup([
+      "....",
+      "....",
+      "....",
+      ".S..",
+      "####",
+    ]);
+    lemming.setState("walking", world);
+    world.grid.set(1, 3, TileType.Bridge);
+    world.grid.set(1, 2, TileType.Bridge);
+    run(world, lemming, 0.05);
+    expect(lemming.y).toBe(2 * TILE_SIZE);
+    expect(lemming.fate).toBe("active");
+  });
+
+  it("is crushed when sealed in with no way out", () => {
+    const { world, lemming } = setup([
+      ".X..",
+      ".X..",
+      ".X..",
+      ".S..",
+      "####",
+    ]);
+    world.grid.set(1, 3, TileType.Bridge);
+    run(world, lemming, 0.05);
+    expect(lemming.fate).toBe("lost");
+  });
+
   it("pops up onto a tile that appears where it is standing", () => {
     const { world, lemming } = setup([
       "....",
