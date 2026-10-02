@@ -25,6 +25,33 @@ export function drawLemming(ctx: CanvasRenderingContext2D, l: Lemming): void {
       rect(-1, -2, 3, 2, PALETTE.lemmingBodyDark);
       break;
 
+    case "jumping":
+      drawBody(rect);
+      rect(2, -8, 2, 1, PALETTE.lemmingSkin); // arm reaching forward
+      rect(-2, -2, 1, 1, PALETTE.lemmingBodyDark); // legs tucked
+      rect(1, -2, 2, 1, PALETTE.lemmingBodyDark);
+      break;
+
+    case "digging": {
+      drawBody(rect);
+      rect(-1, -2, 3, 2, PALETTE.lemmingBodyDark);
+      // Pick swinging between raised and striking
+      const raised = frame === 0;
+      rect(2, raised ? -8 : -5, 2, 1, PALETTE.lemmingSkin);
+      rect(raised ? 3 : 4, raised ? -10 : -6, 1, raised ? 3 : 2, PALETTE.pick);
+      if (!raised) rect(5, -4, 1, 1, PALETTE.dirtLight); // flying dirt
+      break;
+    }
+
+    case "building": {
+      drawBody(rect);
+      rect(-1, -2, 3, 2, PALETTE.lemmingBodyDark);
+      // Kneeling hammer tap, with the plank being laid
+      rect(2, frame === 0 ? -6 : -4, 2, 1, PALETTE.lemmingSkin);
+      rect(-3, -1, 7, 1, PALETTE.bridge);
+      break;
+    }
+
     case "walking":
     default:
       drawBody(rect);

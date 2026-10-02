@@ -18,6 +18,7 @@ describe("Lemming walk & fall", () => {
 
   it("walks right, and turns around when blocked", () => {
     const { world, lemming } = setup([
+      ".....X",
       ".S...X",
       "######",
     ]);
@@ -25,7 +26,7 @@ describe("Lemming walk & fall", () => {
     run(world, lemming, 3, () => lemming.dir === -1);
     expect(lemming.dir).toBe(-1);
     expect(tileX(lemming.x)).toBe(4);
-    expect(lemming.y).toBe(TILE_SIZE); // never left the ground
+    expect(lemming.y).toBe(2 * TILE_SIZE); // never left the ground
   });
 
   it("walks off a ledge and falls", () => {

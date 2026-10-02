@@ -41,7 +41,9 @@ export class Crowd {
 
   private spawn(): void {
     const { spawn } = this.level;
-    this.lemmings.push(new Lemming(spawn.x * TILE_SIZE + TILE_SIZE / 2, spawn.y * TILE_SIZE + TILE_SIZE));
+    const x = spawn.x * TILE_SIZE + TILE_SIZE / 2;
+    const y = spawn.y * TILE_SIZE + TILE_SIZE;
+    this.lemmings.push(new Lemming(x, y, this.level.data.bricks ?? 0));
     this.released++;
   }
 

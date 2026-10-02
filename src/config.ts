@@ -21,3 +21,12 @@ export const LEMMING_HALF_WIDTH = 3;
 
 /** Seconds between lemmings dropping out of the hatch. */
 export const SPAWN_INTERVAL = 1.5;
+
+/** Launch speeds for a jump. Tuned so the arc clears exactly one tile and lands on top of it. */
+export const JUMP_SPEED = 185;
+export const JUMP_FORWARD_SPEED = 40;
+
+/** Seconds to dig through one dirt tile. */
+export const DIG_TIME = 0.8;
+/** Seconds to lay one bridge block. */
+export const BUILD_TIME = 0.6;

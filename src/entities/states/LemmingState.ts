@@ -14,4 +14,4 @@ export interface LemmingState {
   update(lemming: Lemming, world: World, dt: number): void;
 }
 
-export type StateName = "falling" | "walking";
+export type StateName = "falling" | "walking" | "jumping" | "digging" | "building";

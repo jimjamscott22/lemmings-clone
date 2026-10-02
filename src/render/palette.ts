@@ -31,6 +31,7 @@ export const PALETTE = {
   lemmingSkin: "#fcd7b0",
   lemmingBody: "#3b82f6",
   lemmingBodyDark: "#1e40af",
+  pick: "#d1d5db",
 } as const;
 
 /** Representative swatch per tile, for UI legends. */

@@ -15,6 +15,8 @@ export interface LevelData {
   lemmingCount: number;
   /** Lemmings that must reach the goal to win. */
   requiredToSave: number;
+  /** Bridge blocks each lemming carries for auto-building (default 0). */
+  bricks?: number;
 }
 
 /** A parsed, playable level. */

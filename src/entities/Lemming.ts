@@ -30,9 +30,13 @@ export class Lemming {
   /** True once the exit / death animation has finished and the lemming can be removed. */
   done = false;
 
-  constructor(x: number, y: number) {
+  /** Bridge blocks this lemming can still lay. */
+  bricks: number;
+
+  constructor(x: number, y: number, bricks = 0) {
     this.x = x;
     this.y = y;
+    this.bricks = bricks;
   }
 
   /** Grid column containing the lemming's centre. */
@@ -64,7 +68,21 @@ export class Lemming {
   update(world: World, dt: number): void {
     if (this.done) return;
     this.stateTime += dt;
+    this.escapeTerrain(world);
     this.state.update(this, world, dt);
+  }
+
+  /**
+   * If terrain appeared where the body is (a bridge laid on top of it), pop up onto that tile
+   * as long as there's room above. Lemmings sealed in completely are left where they are.
+   */
+  private escapeTerrain(world: World): void {
+    const { grid } = world;
+    const row = this.bodyRow;
+    if (!grid.isSolid(this.col, row) || grid.isSolid(this.col, row - 1)) return;
+    this.y = row * TILE_SIZE;
+    this.vy = 0;
+    if (this.state.name === "falling" || this.state.name === "jumping") this.setState("walking", world);
   }
 
   /** Mark the lemming as finished with the given fate (saved or lost). */
