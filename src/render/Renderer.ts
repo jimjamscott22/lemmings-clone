@@ -10,6 +10,8 @@ export interface RenderState {
   time: number;
   showGrid: boolean;
   hoverTile: TilePoint | null;
+  /** Whether the selected tool can be used on the hovered tile; colours the cursor. */
+  hoverValid: boolean;
   lemmings: readonly Lemming[];
 }
 
@@ -53,7 +55,7 @@ export class Renderer {
     for (const l of state.lemmings) drawLemming(ctx, l);
 
     if (state.showGrid) this.drawGridLines(canvas.width, canvas.height);
-    if (state.hoverTile) this.drawHover(state.hoverTile);
+    if (state.hoverTile) this.drawHover(state.hoverTile, state.hoverValid);
   }
 
   private drawGridLines(w: number, h: number): void {
@@ -63,9 +65,9 @@ export class Renderer {
     for (let y = TILE_SIZE; y < h; y += TILE_SIZE) ctx.fillRect(0, y, w, 1);
   }
 
-  private drawHover({ x, y }: TilePoint): void {
+  private drawHover({ x, y }: TilePoint, valid: boolean): void {
     const { ctx } = this;
-    ctx.strokeStyle = PALETTE.hover;
+    ctx.strokeStyle = valid ? PALETTE.hoverOk : PALETTE.hoverBad;
     ctx.lineWidth = 1;
     // +0.5 aligns a 1px stroke to the pixel grid
     ctx.strokeRect(x * TILE_SIZE + 0.5, y * TILE_SIZE + 0.5, TILE_SIZE - 1, TILE_SIZE - 1);

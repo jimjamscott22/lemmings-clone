@@ -12,6 +12,7 @@ export const LEVELS: readonly LevelData[] = [
     lemmingCount: 10,
     requiredToSave: 6,
     bricks: 2,
+    tools: { dig: 20, build: 12 },
     map: [
       "................................................",
       "................................................",
