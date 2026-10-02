@@ -1,5 +1,7 @@
 import { TILE_SIZE } from "../config";
+import type { Lemming } from "../entities/Lemming";
 import type { Level, TilePoint } from "../world/Level";
+import { drawLemming } from "./lemmingArt";
 import { PALETTE } from "./palette";
 import { TileLayer } from "./TileLayer";
 
@@ -8,6 +10,7 @@ export interface RenderState {
   time: number;
   showGrid: boolean;
   hoverTile: TilePoint | null;
+  lemmings: readonly Lemming[];
 }
 
 /**
@@ -47,6 +50,7 @@ export class Renderer {
 
     ctx.drawImage(this.background, 0, 0);
     this.tileLayer.draw(ctx, state.time);
+    for (const l of state.lemmings) drawLemming(ctx, l);
 
     if (state.showGrid) this.drawGridLines(canvas.width, canvas.height);
     if (state.hoverTile) this.drawHover(state.hoverTile);

@@ -26,6 +26,11 @@ export const PALETTE = {
 
   goal: "#facc15",
   goalGlow: "rgba(250,204,21,0.35)",
+
+  lemmingHair: "#4ade80",
+  lemmingSkin: "#fcd7b0",
+  lemmingBody: "#3b82f6",
+  lemmingBodyDark: "#1e40af",
 } as const;
 
 /** Representative swatch per tile, for UI legends. */

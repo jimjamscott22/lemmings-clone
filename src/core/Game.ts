@@ -1,3 +1,5 @@
+import { Crowd } from "../entities/Crowd";
+import type { World } from "../entities/World";
 import { Input } from "../input/Input";
 import { Renderer } from "../render/Renderer";
 import { Hud } from "../ui/Hud";
@@ -15,6 +17,7 @@ export class Game {
   private readonly hud = new Hud();
 
   private level: Level | null = null;
+  private crowd: Crowd | null = null;
   /** Simulated seconds since the level started (frozen while paused). */
   private time = 0;
   private paused = false;
@@ -31,6 +34,7 @@ export class Game {
 
   loadLevel(data: LevelData): void {
     this.level = parseLevel(data);
+    this.crowd = new Crowd(this.level);
     this.time = 0;
     this.renderer.setLevel(this.level);
     this.hud.setLevelName(data.name);
@@ -40,11 +44,26 @@ export class Game {
     this.loop.start();
   }
 
+  /** Snapshot for the dev console and automated checks. */
+  debug(): object {
+    const c = this.crowd;
+    return {
+      time: +this.time.toFixed(2),
+      released: c?.released,
+      saved: c?.saved,
+      lost: c?.lost,
+      lemmings: c?.lemmings.map((l) => `${l.state.name}@${l.col},${l.bodyRow}`),
+    };
+  }
+
   private update(dt: number): void {
     this.handleKeys();
     if (this.paused) return;
     this.time += dt;
-    // Step 2+: entity updates (lemmings) go here.
+    if (this.level && this.crowd) {
+      const world: World = { grid: this.level.grid };
+      this.crowd.update(world, dt);
+    }
   }
 
   private handleKeys(): void {
@@ -56,10 +75,10 @@ export class Game {
   }
 
   private render(): void {
-    if (!this.level) return;
+    if (!this.level || !this.crowd) return;
     const hoverTile = this.input.pointerTile();
 
-    this.renderer.draw({ time: this.time, showGrid: this.showGrid, hoverTile });
+    this.renderer.draw({ time: this.time, showGrid: this.showGrid, hoverTile, lemmings: this.crowd.lemmings });
     this.hud.setHoverTile(this.level.grid, hoverTile);
     this.hud.setFps(this.loop.fps, performance.now());
   }
