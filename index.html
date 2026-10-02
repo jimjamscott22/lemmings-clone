@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lemmings Clone</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Silkscreen&display=swap" rel="stylesheet" />
+  </head>
+  <body class="min-h-screen bg-stone-950 text-stone-200 font-mono antialiased">
+    <div class="mx-auto flex h-screen max-w-7xl flex-col gap-3 px-4 py-4">
+      <!-- Top bar -->
+      <header class="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
+        <h1 class="font-pixel text-xl tracking-wide text-lime-300">Lemmings<span class="text-stone-500">.ts</span></h1>
+        <div class="flex gap-5 text-xs text-stone-400">
+          <span>Level: <span id="hud-level" class="text-stone-100">—</span></span>
+          <span>Tile: <span id="hud-tile" class="text-stone-100">—</span></span>
+          <span id="hud-paused" class="hidden text-amber-300">PAUSED</span>
+          <span><span id="hud-fps" class="tabular-nums text-stone-100">0</span> fps</span>
+        </div>
+      </header>
+
+      <!-- Game viewport: the canvas is integer-scaled to fit this box -->
+      <main id="viewport" class="relative flex min-h-0 flex-1 items-center justify-center rounded-lg border border-stone-800 bg-black/40">
+        <canvas id="game" class="pixelated block shadow-2xl shadow-black"></canvas>
+      </main>
+
+      <!-- Legend + key hints -->
+      <footer class="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 text-xs text-stone-400">
+        <ul id="hud-legend" class="flex flex-wrap gap-x-4 gap-y-1"></ul>
+        <div class="flex gap-4">
+          <span><kbd class="kbd">G</kbd> grid</span>
+          <span><kbd class="kbd">Space</kbd> pause</span>
+        </div>
+      </footer>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

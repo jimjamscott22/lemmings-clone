@@ -1,0 +1,13 @@
+@import "tailwindcss";
+
+@theme {
+  --font-pixel: "Silkscreen", ui-monospace, monospace;
+}
+
+@utility pixelated {
+  image-rendering: pixelated;
+}
+
+@utility kbd {
+  @apply rounded border border-stone-600 bg-stone-800 px-1.5 py-0.5 text-[10px] text-stone-200;
+}
