@@ -1,16 +1,16 @@
-# Graph Report - lemmings-clone  (2026-10-02)
+# Graph Report - lemmings-clone  (2026-10-03)
 
 ## Corpus Check
-- 42 files · ~11,462 words
+- 54 files · ~17,712 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 276 nodes · 674 edges · 11 communities
-- Extraction: 97% EXTRACTED · 3% INFERRED · 0% AMBIGUOUS · INFERRED: 22 edges (avg confidence: 0.8)
+- 351 nodes · 918 edges · 14 communities
+- Extraction: 96% EXTRACTED · 4% INFERRED · 0% AMBIGUOUS · INFERRED: 35 edges (avg confidence: 0.8)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `2f534638`
+- Built from commit: `ec7cd191`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -22,21 +22,24 @@
 - compilerOptions
 - package.json
 - Crowd.ts
-- Renderer.ts
+- TilePoint
 - GameLoop
 - Lemmings.ts
+- Lemming
+- Features to Add
+- Plan: Skills given to individual lemmings
 
 ## God Nodes (most connected - your core abstractions)
-1. `Lemming` - 24 edges
-2. `Grid` - 23 edges
-3. `Game` - 19 edges
-4. `TilePoint` - 17 edges
-5. `TileType` - 17 edges
-6. `TILE_SIZE` - 16 edges
-7. `Crowd` - 16 edges
-8. `World` - 16 edges
-9. `compilerOptions` - 15 edges
-10. `Hud` - 14 edges
+1. `Lemming` - 40 edges
+2. `Grid` - 26 edges
+3. `World` - 24 edges
+4. `TileType` - 21 edges
+5. `TILE_SIZE` - 20 edges
+6. `Crowd` - 20 edges
+7. `Game` - 19 edges
+8. `LemmingState` - 18 edges
+9. `TilePoint` - 17 edges
+10. `Toolbox` - 16 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `Session` --references--> `Crowd`  [EXTRACTED]
@@ -51,35 +54,44 @@
   src/core/Game.ts → src/render/Renderer.ts
 
 ## Import Cycles
+- 3-file cycle: `src/entities/Lemming.ts -> src/entities/states/index.ts -> src/entities/states/falling.ts -> src/entities/Lemming.ts`
 - 3-file cycle: `src/entities/Lemming.ts -> src/entities/states/index.ts -> src/entities/states/LemmingState.ts -> src/entities/Lemming.ts`
-- 3-file cycle: `src/entities/Lemming.ts -> src/entities/states/index.ts -> src/entities/states/digging.ts -> src/entities/Lemming.ts`
 - 3-file cycle: `src/entities/Lemming.ts -> src/entities/states/index.ts -> src/entities/states/swimming.ts -> src/entities/Lemming.ts`
 - 3-file cycle: `src/entities/Lemming.ts -> src/entities/states/index.ts -> src/entities/states/walking.ts -> src/entities/Lemming.ts`
-- 4-file cycle: `src/entities/Lemming.ts -> src/entities/states/index.ts -> src/entities/states/jumping.ts -> src/entities/states/LemmingState.ts -> src/entities/Lemming.ts`
+- 4-file cycle: `src/entities/Lemming.ts -> src/entities/states/index.ts -> src/entities/states/falling.ts -> src/entities/states/LemmingState.ts -> src/entities/Lemming.ts`
+- 4-file cycle: `src/entities/Lemming.ts -> src/entities/states/index.ts -> src/entities/states/bashing.ts -> src/entities/states/LemmingState.ts -> src/entities/Lemming.ts`
+- 4-file cycle: `src/entities/Lemming.ts -> src/entities/states/index.ts -> src/entities/states/bashing.ts -> src/entities/states/movement.ts -> src/entities/Lemming.ts`
+- 4-file cycle: `src/entities/Lemming.ts -> src/entities/states/index.ts -> src/entities/states/blocking.ts -> src/entities/states/LemmingState.ts -> src/entities/Lemming.ts`
 - 4-file cycle: `src/entities/Lemming.ts -> src/entities/states/index.ts -> src/entities/states/building.ts -> src/entities/states/LemmingState.ts -> src/entities/Lemming.ts`
+- 4-file cycle: `src/entities/Lemming.ts -> src/entities/states/index.ts -> src/entities/states/climbing.ts -> src/entities/states/LemmingState.ts -> src/entities/Lemming.ts`
+- 4-file cycle: `src/entities/Lemming.ts -> src/entities/states/index.ts -> src/entities/states/climbing.ts -> src/entities/states/movement.ts -> src/entities/Lemming.ts`
 - 4-file cycle: `src/entities/Lemming.ts -> src/entities/states/index.ts -> src/entities/states/digging.ts -> src/entities/states/LemmingState.ts -> src/entities/Lemming.ts`
 - 4-file cycle: `src/entities/Lemming.ts -> src/entities/states/index.ts -> src/entities/states/exiting.ts -> src/entities/states/LemmingState.ts -> src/entities/Lemming.ts`
-- 4-file cycle: `src/entities/Lemming.ts -> src/entities/states/index.ts -> src/entities/states/falling.ts -> src/entities/states/LemmingState.ts -> src/entities/Lemming.ts`
+- 4-file cycle: `src/entities/Lemming.ts -> src/entities/states/index.ts -> src/entities/states/jumping.ts -> src/entities/states/LemmingState.ts -> src/entities/Lemming.ts`
+- 4-file cycle: `src/entities/Lemming.ts -> src/entities/states/index.ts -> src/entities/states/mining.ts -> src/entities/states/LemmingState.ts -> src/entities/Lemming.ts`
+- 4-file cycle: `src/entities/Lemming.ts -> src/entities/states/index.ts -> src/entities/states/splatting.ts -> src/entities/states/LemmingState.ts -> src/entities/Lemming.ts`
 - 4-file cycle: `src/entities/Lemming.ts -> src/entities/states/index.ts -> src/entities/states/swimming.ts -> src/entities/states/LemmingState.ts -> src/entities/Lemming.ts`
+- 4-file cycle: `src/entities/Lemming.ts -> src/entities/states/index.ts -> src/entities/states/swimming.ts -> src/entities/states/movement.ts -> src/entities/Lemming.ts`
 - 4-file cycle: `src/entities/Lemming.ts -> src/entities/states/index.ts -> src/entities/states/walking.ts -> src/entities/states/LemmingState.ts -> src/entities/Lemming.ts`
+- 4-file cycle: `src/entities/Lemming.ts -> src/entities/states/index.ts -> src/entities/states/walking.ts -> src/entities/states/movement.ts -> src/entities/Lemming.ts`
 
-## Communities (11 total, 0 thin omitted)
+## Communities (14 total, 0 thin omitted)
 
 ### Community 0 - "config.ts"
-Cohesion: 0.10
-Nodes (30): BUILD_TIME, DIG_TIME, DROWN_TIME, FLOAT_DEPTH, GRAVITY, JUMP_FORWARD_SPEED, JUMP_SPEED, LEMMING_HALF_WIDTH (+22 more)
+Cohesion: 0.08
+Nodes (52): BASH_TIME, BLOCKER_REACH, BOMB_RADIUS, BUILD_TIME, CLIMB_SPEED, DIG_TIME, DROWN_TIME, EXIT_TIME (+44 more)
 
 ### Community 1 - "Game.ts"
-Cohesion: 0.10
-Nodes (21): RELEASE_RATE_HOLD_SPEED, TILE_SIZE, RATE_DOWN_KEYS, RATE_UP_KEYS, Session, Input, canvas, game (+13 more)
+Cohesion: 0.08
+Nodes (27): BOMB_FUSE, RELEASE_RATE_HOLD_SPEED, RATE_DOWN_KEYS, RATE_UP_KEYS, Session, canvas, game, INTERRUPTIBLE (+19 more)
 
 ### Community 2 - "Grid"
-Cohesion: 0.12
-Nodes (16): drawAnimatedTile(), drawBridge(), drawDirt(), drawGoal(), drawStaticTile(), drawWall(), drawWater(), TileLayer (+8 more)
+Cohesion: 0.10
+Nodes (18): isHard(), PALETTE, TILE_SWATCH, drawAnimatedTile(), drawBridge(), drawDirt(), drawGoal(), drawStaticTile() (+10 more)
 
 ### Community 3 - "Game"
-Cohesion: 0.10
-Nodes (6): Game, ToolId, byId(), Hud, LevelResult, ResultOverlay
+Cohesion: 0.17
+Nodes (4): Game, byId(), LevelResult, ResultOverlay
 
 ### Community 4 - "compilerOptions"
 Cohesion: 0.09
@@ -90,39 +102,51 @@ Cohesion: 0.09
 Nodes (21): devDependencies, tailwindcss, @tailwindcss/vite, typescript, vite, vitest, name, private (+13 more)
 
 ### Community 6 - "Crowd.ts"
-Cohesion: 0.15
-Nodes (10): RELEASE_RATE_DEFAULT, RELEASE_RATE_MAX, RELEASE_RATE_MIN, RELEASE_RATE_STEP, SPAWN_INTERVAL, clampRate(), Crowd, releaseInterval() (+2 more)
+Cohesion: 0.12
+Nodes (19): FIXED_TIMESTEP, RELEASE_RATE_DEFAULT, RELEASE_RATE_MAX, RELEASE_RATE_MIN, RELEASE_RATE_STEP, SPAWN_INTERVAL, TILE_SIZE, clampRate() (+11 more)
 
-### Community 7 - "Renderer.ts"
-Cohesion: 0.17
-Nodes (9): EXIT_TIME, isDrowning(), drawBody(), drawLemming(), RectFn, PALETTE, TILE_SWATCH, Renderer (+1 more)
+### Community 7 - "TilePoint"
+Cohesion: 0.15
+Nodes (4): Input, Renderer, RenderState, TilePoint
 
 ### Community 8 - "GameLoop"
-Cohesion: 0.20
-Nodes (4): FIXED_TIMESTEP, MAX_FRAME_TIME, GameLoop, LoopCallbacks
+Cohesion: 0.22
+Nodes (3): MAX_FRAME_TIME, GameLoop, LoopCallbacks
 
 ### Community 9 - "Lemmings.ts"
+Cohesion: 0.29
+Nodes (6): Architecture, Controls, How lemmings behave, Lemmings.ts, Running it, Skills
+
+### Community 11 - "Lemming"
+Cohesion: 0.17
+Nodes (6): blast(), Lemming, toTile(), World, job(), TestWorld
+
+### Community 12 - "Features to Add"
+Cohesion: 0.25
+Nodes (7): 1. Content: More Levels (Cheap, Big Payoff), 2. Classic Lemmings Skills Given to Individual Lemmings, 3. New Tiles and Hazards, 4. Game Feel, 5. Tooling, Features to Add, My Recommendation
+
+### Community 13 - "Plan: Skills given to individual lemmings"
 Cohesion: 0.33
-Nodes (5): Architecture, Controls, How lemmings behave, Lemmings.ts, Running it
+Nodes (5): Design decisions, Implementation steps, Plan: Skills given to individual lemmings, Skill rules, Verification
 
 ## Knowledge Gaps
-- **47 isolated node(s):** `name`, `private`, `version`, `type`, `dev` (+42 more)
+- **59 isolated node(s):** `name`, `private`, `version`, `type`, `dev` (+54 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `Game` connect `Game` to `GameLoop`, `Game.ts`, `Renderer.ts`?**
-  _High betweenness centrality (0.069) - this node is a cross-community bridge._
-- **Why does `Grid` connect `Grid` to `config.ts`, `Game.ts`?**
-  _High betweenness centrality (0.058) - this node is a cross-community bridge._
-- **Why does `Hud` connect `Game` to `Game.ts`, `Grid`?**
-  _High betweenness centrality (0.054) - this node is a cross-community bridge._
+- **Why does `Lemming` connect `Lemming` to `config.ts`, `Game.ts`, `Grid`, `Game`, `Crowd.ts`, `TilePoint`?**
+  _High betweenness centrality (0.077) - this node is a cross-community bridge._
+- **Why does `Grid` connect `Grid` to `config.ts`, `Game.ts`, `Lemming`?**
+  _High betweenness centrality (0.050) - this node is a cross-community bridge._
+- **Why does `Game` connect `Game` to `GameLoop`, `Game.ts`, `TilePoint`?**
+  _High betweenness centrality (0.045) - this node is a cross-community bridge._
 - **What connects `name`, `private`, `version` to the rest of the system?**
-  _47 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _59 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `config.ts` be split into smaller, more focused modules?**
-  _Cohesion score 0.10412299091544375 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.07550860719874804 - nodes in this community are weakly interconnected._
 - **Should `Game.ts` be split into smaller, more focused modules?**
-  _Cohesion score 0.10202020202020202 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.07692307692307693 - nodes in this community are weakly interconnected._
 - **Should `Grid` be split into smaller, more focused modules?**
-  _Cohesion score 0.11794871794871795 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.10338164251207729 - nodes in this community are weakly interconnected._

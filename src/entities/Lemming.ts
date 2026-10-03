@@ -1,6 +1,7 @@
-import { TILE_SIZE } from "../config";
+import { LEMMING_HALF_WIDTH, TILE_SIZE } from "../config";
 import type { Grid } from "../world/Grid";
 import { TileType } from "../world/TileType";
+import { blast } from "./blast";
 import { STATES, type LemmingState, type StateName } from "./states";
 import { toTile, type World } from "./World";
 
@@ -37,6 +38,14 @@ export class Lemming {
   /** Bridge blocks this lemming can still lay. */
   bricks: number;
 
+  /** Permanent upgrades given by the player: climbs walls / survives long falls. */
+  climber = false;
+  floater = false;
+  /** Seconds until a bomber explodes, or null if it isn't one. */
+  fuse: number | null = null;
+  /** Where the current fall started, for fall damage. Set when entering the falling state. */
+  fallStartY = 0;
+
   constructor(x: number, y: number, bricks = 0) {
     this.x = x;
     this.y = y;
@@ -46,6 +55,11 @@ export class Lemming {
   /** Grid column containing the lemming's centre. */
   get col(): number {
     return toTile(this.x);
+  }
+
+  /** Column of the tile directly in front: the one it bumps into, digs or climbs. */
+  get frontCol(): number {
+    return toTile(this.x + this.dir * (LEMMING_HALF_WIDTH + 1));
   }
 
   /** Grid row containing the lemming's body (the row just above its feet). */
@@ -72,9 +86,20 @@ export class Lemming {
   update(world: World, dt: number): void {
     if (this.done) return;
     this.stateTime += dt;
+    if (this.tickFuse(world, dt)) return;
     this.escapeTerrain(world);
     this.checkTriggers(world);
     this.state.update(this, world, dt);
+  }
+
+  /** Count down a bomber's fuse; returns true if it went off. Reaching the exit defuses it. */
+  private tickFuse(world: World, dt: number): boolean {
+    if (this.fuse === null || this.state.name === "exiting") return false;
+    this.fuse -= dt;
+    if (this.fuse > 0) return false;
+    blast(world.grid, this.x, this.y - TILE_SIZE / 2);
+    this.retire("lost");
+    return true;
   }
 
   /** Tiles that take over whatever the lemming was doing: the goal and water. */

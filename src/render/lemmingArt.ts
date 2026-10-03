@@ -1,5 +1,6 @@
-import { EXIT_TIME } from "../config";
+import { EXIT_TIME, SPLAT_TIME } from "../config";
 import type { Lemming } from "../entities/Lemming";
+import { isFloating } from "../entities/states/falling";
 import { isDrowning } from "../entities/states/swimming";
 import { PALETTE } from "./palette";
 
@@ -21,10 +22,71 @@ export function drawLemming(ctx: CanvasRenderingContext2D, l: Lemming): void {
   switch (l.state.name) {
     case "falling":
       drawBody(rect);
-      // Arms flung up, legs together
-      rect(-3, -11, 1, 3, PALETTE.lemmingSkin);
-      rect(2, -11, 1, 3, PALETTE.lemmingSkin);
       rect(-1, -2, 3, 2, PALETTE.lemmingBodyDark);
+      if (isFloating(l)) {
+        // Umbrella held overhead, swaying gently
+        const sway = frame === 0 ? 0 : 1;
+        rect(-2 + sway, -16, 5, 1, PALETTE.umbrella);
+        rect(-4 + sway, -15, 9, 1, PALETTE.umbrella);
+        rect(-5 + sway, -14, 11, 1, PALETTE.umbrellaDark);
+        rect(0 + sway, -13, 1, 3, PALETTE.pick);
+        rect(1, -11, 1, 2, PALETTE.lemmingSkin);
+      } else {
+        // Arms flung up, legs together
+        rect(-3, -11, 1, 3, PALETTE.lemmingSkin);
+        rect(2, -11, 1, 3, PALETTE.lemmingSkin);
+      }
+      break;
+
+    case "climbing":
+      drawBody(rect);
+      // Pressed against the wall, hand over hand
+      rect(2, frame === 0 ? -12 : -10, 1, 3, PALETTE.lemmingSkin);
+      rect(1, frame === 0 ? -3 : -2, 2, 1, PALETTE.lemmingBodyDark);
+      rect(-1, -2, 2, 2, PALETTE.lemmingBodyDark);
+      break;
+
+    case "blocking":
+      drawBody(rect);
+      // Arms out, feet planted
+      rect(-5, -6, 3, 1, PALETTE.lemmingSkin);
+      rect(2, -6, 3, 1, PALETTE.lemmingSkin);
+      rect(-2, -2, 1, 2, PALETTE.lemmingBodyDark);
+      rect(1, -2, 1, 2, PALETTE.lemmingBodyDark);
+      break;
+
+    case "bashing": {
+      drawBody(rect);
+      rect(-1, -2, 3, 2, PALETTE.lemmingBodyDark);
+      // Punching forward, with debris on the hit
+      const punch = frame === 0;
+      rect(2, -6, punch ? 4 : 2, 1, PALETTE.lemmingSkin);
+      if (punch) rect(6, -8, 1, 1, PALETTE.dirtLight);
+      break;
+    }
+
+    case "mining": {
+      drawBody(rect);
+      rect(-1, -2, 3, 2, PALETTE.lemmingBodyDark);
+      // Pick swinging down and forward
+      const raised = frame === 0;
+      rect(2, raised ? -8 : -5, 2, 1, PALETTE.lemmingSkin);
+      if (raised) rect(3, -11, 1, 3, PALETTE.pick);
+      else {
+        rect(4, -3, 2, 1, PALETTE.pick);
+        rect(6, -1, 1, 1, PALETTE.dirtLight);
+      }
+      break;
+    }
+
+    case "splatting":
+      // Flattened, fading away
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, 1 - l.stateTime / SPLAT_TIME);
+      rect(-4, -2, 8, 2, PALETTE.lemmingBody);
+      rect(-3, -3, 3, 1, PALETTE.lemmingHair);
+      rect(1, -3, 2, 1, PALETTE.lemmingSkin);
+      ctx.restore();
       break;
 
     case "jumping":
@@ -93,6 +155,29 @@ export function drawLemming(ctx: CanvasRenderingContext2D, l: Lemming): void {
       rect(2, -6, 1, 2, PALETTE.lemmingSkin); // swinging arm
       break;
   }
+
+  // A bomber's countdown floats above its head (never mirrored, so the digit reads correctly).
+  if (l.fuse !== null && !l.done) drawDigit(ctx, Math.ceil(l.fuse), cx - 1, by - 18, PALETTE.fuse);
+}
+
+/** 3×5 pixel digits, one row of three bits per line, top to bottom. */
+const DIGITS = [
+  "111101101101111",
+  "010110010010111",
+  "111001111100111",
+  "111001111001111",
+  "101101111001001",
+  "111100111001111",
+  "111100111101111",
+  "111001001001001",
+  "111101111101111",
+  "111101111001111",
+];
+
+function drawDigit(ctx: CanvasRenderingContext2D, n: number, x: number, y: number, color: string): void {
+  const bits = DIGITS[Math.min(9, Math.max(0, n))]!;
+  ctx.fillStyle = color;
+  for (let i = 0; i < 15; i++) if (bits[i] === "1") ctx.fillRect(x + (i % 3), y + Math.floor(i / 3), 1, 1);
 }
 
 type RectFn = (dx: number, dy: number, w: number, h: number, color: string) => void;
