@@ -4,6 +4,12 @@ import type { TilePoint } from "../world/Level";
 import { TILE_PROPS, TileType } from "../world/TileType";
 import { ACTION_ORDER, actionInfo, isSkill, type ActionId } from "../tools/actions";
 
+/** Simulated seconds as m:ss. */
+export function formatTime(seconds: number): string {
+  const s = Math.floor(seconds);
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+}
+
 export function byId<T extends HTMLElement>(id: string): T {
   const el = document.getElementById(id);
   if (!el) throw new Error(`Missing #${id} in index.html`);
@@ -13,6 +19,8 @@ export function byId<T extends HTMLElement>(id: string): T {
 /** DOM overlay (Tailwind-styled). Writes to the DOM only when values change. */
 export class Hud {
   private readonly levelEl = byId("hud-level");
+  private readonly progressEl = byId("hud-progress");
+  private readonly bestEl = byId("hud-best");
   private readonly tileEl = byId("hud-tile");
   private readonly fpsEl = byId("hud-fps");
   private readonly pausedEl = byId("hud-paused");
@@ -34,9 +42,14 @@ export class Hud {
   private lastFpsUpdate = 0;
   private lastTileText = "";
 
-  constructor(handlers: { onSelectTool: (id: ActionId) => void; onAdjustRate: (delta: number) => void }) {
+  constructor(handlers: {
+    onSelectTool: (id: ActionId) => void;
+    onAdjustRate: (delta: number) => void;
+    onOpenLevels: () => void;
+  }) {
     this.buildLegend();
     this.buildToolbar(handlers.onSelectTool);
+    byId("hud-levels").addEventListener("click", handlers.onOpenLevels);
     byId("hud-rate-down").addEventListener("click", () => handlers.onAdjustRate(-1));
     byId("hud-rate-up").addEventListener("click", () => handlers.onAdjustRate(1));
   }
@@ -65,6 +78,20 @@ export class Hud {
 
   setLevelName(name: string): void {
     this.levelEl.textContent = name;
+  }
+
+  setSolved(solved: number, total: number): void {
+    this.progressEl.textContent = `Solved ${solved}/${total}`;
+  }
+
+  /** Personal best on the current level, or a dash if it has never been finished. */
+  setBest(best: { saved: number; total: number; fastestWin: number | null } | null): void {
+    if (!best) {
+      this.bestEl.textContent = "Best —";
+      return;
+    }
+    const time = best.fastestWin === null ? "" : ` · ${formatTime(best.fastestWin)}`;
+    this.bestEl.textContent = `Best ${best.saved}/${best.total}${time}`;
   }
 
   setPaused(paused: boolean): void {

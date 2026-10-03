@@ -71,6 +71,11 @@ export class Input {
     return this.pressed.delete(code);
   }
 
+  /** Forget queued key presses (e.g. ones made while a menu had the keyboard). */
+  clearPresses(): void {
+    this.pressed.clear();
+  }
+
   /** True while the key is held down. */
   isDown(code: string): boolean {
     return this.held.has(code);

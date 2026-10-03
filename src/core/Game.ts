@@ -2,10 +2,12 @@ import { RELEASE_RATE_HOLD_SPEED } from "../config";
 import { Crowd } from "../entities/Crowd";
 import type { World } from "../entities/World";
 import { Input } from "../input/Input";
+import type { Progress } from "../progress/Progress";
 import { Renderer } from "../render/Renderer";
 import { ACTION_ORDER, actionInfo } from "../tools/actions";
 import { Toolbox } from "../tools/Toolbox";
 import { byId, Hud } from "../ui/Hud";
+import { LevelSelect } from "../ui/LevelSelect";
 import { ResultOverlay } from "../ui/ResultOverlay";
 import { parseLevel, type Level, type LevelData } from "../world/Level";
 import { GameLoop } from "./GameLoop";
@@ -38,6 +40,7 @@ export class Game {
   private readonly input: Input;
   private readonly hud: Hud;
   private readonly overlay: ResultOverlay;
+  private readonly levelSelect: LevelSelect;
 
   private levelIndex = 0;
   private session: Session | null = null;
@@ -54,15 +57,27 @@ export class Game {
     canvas: HTMLCanvasElement,
     viewport: HTMLElement,
     private readonly levels: readonly LevelData[],
+    private readonly progress: Progress,
   ) {
     this.renderer = new Renderer(canvas, viewport);
     this.input = new Input(canvas);
     this.hud = new Hud({
       onSelectTool: (id) => this.session?.tools.select(id),
       onAdjustRate: (delta) => this.session?.crowd.adjustReleaseRate(delta),
+      onOpenLevels: () => this.openLevelSelect(),
     });
-    this.overlay = new ResultOverlay({ onRetry: () => this.restart(), onNext: () => this.nextLevel() });
+    this.overlay = new ResultOverlay({
+      onRetry: () => this.restart(),
+      onNext: () => this.nextLevel(),
+      onLevels: () => this.openLevelSelect(),
+    });
+    this.levelSelect = new LevelSelect({
+      onChoose: (index) => this.chooseLevel(index),
+      onClose: () => this.levelSelect.close(),
+      onReset: () => this.resetProgress(),
+    });
     byId("hud-restart").addEventListener("click", () => this.restart());
+    this.showGrid = progress.settings.showGrid;
     this.loop = new GameLoop({
       update: (dt) => this.update(dt),
       render: () => this.render(),
@@ -85,7 +100,33 @@ export class Game {
     this.time = 0;
     this.renderer.setLevel(level);
     this.hud.setLevelName(`${index + 1}. ${data.name}`);
+    this.progress.setLastLevel(data.name);
+    this.refreshProgress();
     this.overlay.hide();
+    this.levelSelect.close();
+  }
+
+  /** Load a level from the level select; locked levels can't be chosen. */
+  chooseLevel(index: number): void {
+    if (this.progress.isUnlocked(this.levelNames, index)) this.loadLevel(index);
+  }
+
+  /** Show the level select. The simulation is frozen while it's open. */
+  openLevelSelect(): void {
+    const cards = this.levels.map((data, i) => ({
+      name: data.name,
+      lemmingCount: data.lemmingCount,
+      requiredToSave: data.requiredToSave,
+      unlocked: this.progress.isUnlocked(this.levelNames, i),
+      record: this.progress.get(data.name),
+    }));
+    this.levelSelect.open(cards, this.levelIndex);
+    // Unhandled presses (e.g. an Esc during play) are still queued; don't let them close it at once.
+    this.input.clearPresses();
+  }
+
+  private get levelNames(): string[] {
+    return this.levels.map((l) => l.name);
   }
 
   restart(): void {
@@ -95,6 +136,15 @@ export class Game {
   /** Advance after a win; wraps back to the first level after the last. */
   nextLevel(): void {
     this.loadLevel((this.levelIndex + 1) % this.levels.length);
+  }
+
+  /** Forget solved levels and bests (after confirming), which locks everything but level 1 again. */
+  resetProgress(): void {
+    if (!confirm("Forget which levels you've solved and all your best scores?")) return;
+    this.progress.reset();
+    this.showGrid = false;
+    this.loadLevel(0);
+    this.openLevelSelect();
   }
 
   start(): void {
@@ -118,10 +168,12 @@ export class Game {
           (l.floater ? " floater" : "") +
           (l.fuse !== null ? ` fuse=${l.fuse.toFixed(1)}` : ""),
       ),
+      progress: this.session && this.progress.get(this.session.level.data.name),
     };
   }
 
   private update(dt: number): void {
+    if (this.levelSelect.isOpen) return this.handleLevelSelectInput();
     this.handleKeys();
     if (!this.session) return;
     this.handleReleaseRate(this.session, dt);
@@ -141,17 +193,44 @@ export class Game {
     if (!crowd.finished) return;
     const required = level.data.requiredToSave;
     session.outcome = crowd.saved >= required ? "won" : "lost";
+    const won = session.outcome === "won";
+    const update = this.progress.record(level.data.name, { won, saved: crowd.saved, time: this.time });
+    this.refreshProgress();
     this.overlay.show({
-      won: session.outcome === "won",
+      won,
       saved: crowd.saved,
       required,
       total: crowd.total,
       hasNext: this.levels.length > 1,
+      time: this.time,
+      progress: update,
     });
   }
 
+  /** While the level select is open, only Esc / L (close) count; everything else is dropped. */
+  private handleLevelSelectInput(): void {
+    if (this.input.consumePress("Escape") || this.input.consumePress("KeyL")) this.levelSelect.close();
+    this.input.clearPresses();
+    this.input.consumeStroke();
+    this.input.consumeClicks();
+  }
+
+  /** Solved count and the personal best for the current level. */
+  private refreshProgress(): void {
+    this.hud.setSolved(this.progress.solvedCount(this.levelNames), this.levels.length);
+    const data = this.levels[this.levelIndex]!;
+    const record = this.progress.get(data.name);
+    this.hud.setBest(
+      record.attempts > 0 ? { saved: record.bestSaved, total: data.lemmingCount, fastestWin: record.fastestWin } : null,
+    );
+  }
+
   private handleKeys(): void {
-    if (this.input.consumePress("KeyG")) this.showGrid = !this.showGrid;
+    if (this.input.consumePress("KeyG")) {
+      this.showGrid = !this.showGrid;
+      this.progress.updateSettings({ showGrid: this.showGrid });
+    }
+    if (this.input.consumePress("KeyL")) return this.openLevelSelect();
     if (this.input.consumePress("KeyR")) return this.restart();
     if (this.input.consumePress("KeyN") && this.session?.outcome === "won") return this.nextLevel();
     if (this.input.consumePress("KeyF")) {

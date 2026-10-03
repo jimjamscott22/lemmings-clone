@@ -31,8 +31,15 @@ npm run build      # typecheck + production build
 | `R` | Restart the level |
 | `N` | Next level (after a win) |
 | `G` | Toggle grid overlay |
+| `L` | Open the level select (`Esc` or `L` closes it) |
 
 Each tool and skill has limited charges per level, shown in the toolbar.
+
+## Progress
+
+The game opens on a level select screen. Levels unlock in order: the first is open, and solving a level unlocks the next. Each card shows whether the level is solved, your best saved count and fastest win, and how many attempts and wins you've had. The simulation is frozen while the level select is open.
+
+Progress is saved in your browser's `localStorage`: the per-level records, the level you last played (the level select starts with it highlighted, so `Enter` resumes it), and whether the grid overlay is on. The HUD shows how many levels you've solved and your best on the current level. The end-of-level panel calls out a first clear or a new best. **reset progress** on the level select clears it all and locks every level but the first.
 
 ## Skills
 
@@ -79,6 +86,7 @@ src/
 ├── world/                Grid, TileType properties, ASCII level parser, and level data
 ├── render/               Canvas renderer, cached tile layer, tile and lemming pixel art
 ├── input/                Pointer and keyboard; drag samples are queued so fast strokes aren't missed
+├── progress/             Saved progress (solved levels, bests, resume point, settings) over a pluggable key-value store
 └── ui/                   Tailwind HUD and the end-of-level overlay
 ```
 
