@@ -10,14 +10,6 @@ export function formatTime(seconds: number): string {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 }
 
-/** Keys that still operate the level picker; everything else is left to the game's shortcuts. */
-const PICKER_KEYS = new Set(["ArrowUp", "ArrowDown", "Home", "End", "Enter", "Tab", "Escape"]);
-
-export interface LevelEntry {
-  name: string;
-  solved: boolean;
-}
-
 export function byId<T extends HTMLElement>(id: string): T {
   const el = document.getElementById(id);
   if (!el) throw new Error(`Missing #${id} in index.html`);
@@ -26,7 +18,7 @@ export function byId<T extends HTMLElement>(id: string): T {
 
 /** DOM overlay (Tailwind-styled). Writes to the DOM only when values change. */
 export class Hud {
-  private readonly levelEl = byId<HTMLSelectElement>("hud-level");
+  private readonly levelEl = byId("hud-level");
   private readonly progressEl = byId("hud-progress");
   private readonly bestEl = byId("hud-best");
   private readonly tileEl = byId("hud-tile");
@@ -53,19 +45,11 @@ export class Hud {
   constructor(handlers: {
     onSelectTool: (id: ActionId) => void;
     onAdjustRate: (delta: number) => void;
-    onSelectLevel: (index: number) => void;
+    onOpenLevels: () => void;
   }) {
     this.buildLegend();
     this.buildToolbar(handlers.onSelectTool);
-    this.levelEl.addEventListener("change", () => {
-      this.levelEl.blur();
-      handlers.onSelectLevel(this.levelEl.selectedIndex);
-    });
-    // Without this, game shortcuts typed while the picker has focus would also jump to the
-    // option they type-ahead match (e.g. "1" → level 1), or open it (Space).
-    this.levelEl.addEventListener("keydown", (e) => {
-      if (!PICKER_KEYS.has(e.key)) e.preventDefault();
-    });
+    byId("hud-levels").addEventListener("click", handlers.onOpenLevels);
     byId("hud-rate-down").addEventListener("click", () => handlers.onAdjustRate(-1));
     byId("hud-rate-up").addEventListener("click", () => handlers.onAdjustRate(1));
   }
@@ -92,17 +76,12 @@ export class Hud {
     }
   }
 
-  /** Rebuild the level picker, marking solved levels, and the solved count beside it. */
-  setLevels(levels: readonly LevelEntry[], current: number): void {
-    const options = levels.map(({ name, solved }, i) => {
-      const option = document.createElement("option");
-      option.textContent = `${solved ? "✓" : "\u2003"} ${i + 1}. ${name}`;
-      return option;
-    });
-    this.levelEl.replaceChildren(...options);
-    this.levelEl.selectedIndex = current;
-    const solved = levels.filter((l) => l.solved).length;
-    this.progressEl.textContent = `Solved ${solved}/${levels.length}`;
+  setLevelName(name: string): void {
+    this.levelEl.textContent = name;
+  }
+
+  setSolved(solved: number, total: number): void {
+    this.progressEl.textContent = `Solved ${solved}/${total}`;
   }
 
   /** Personal best on the current level, or a dash if it has never been finished. */

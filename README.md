@@ -31,13 +31,15 @@ npm run build      # typecheck + production build
 | `R` | Restart the level |
 | `N` | Next level (after a win) |
 | `G` | Toggle grid overlay |
-| Level picker | Jump to any level (solved ones are ticked) |
+| `L` | Open the level select (`Esc` or `L` closes it) |
 
 Each tool and skill has limited charges per level, shown in the toolbar.
 
 ## Progress
 
-Progress is saved in your browser's `localStorage`. For each level it keeps whether you've solved it, your best saved count, your fastest win, and how many attempts and wins you've had. It also remembers the level you last played (and resumes there) and whether the grid overlay is on. The HUD shows how many levels you've solved and your best on the current level. The end-of-level panel calls out a first clear or a new best. **reset progress** in the footer clears it all.
+The game opens on a level select screen. Levels unlock in order: the first is open, and solving a level unlocks the next. Each card shows whether the level is solved, your best saved count and fastest win, and how many attempts and wins you've had. The simulation is frozen while the level select is open.
+
+Progress is saved in your browser's `localStorage`: the per-level records, the level you last played (the level select starts with it highlighted, so `Enter` resumes it), and whether the grid overlay is on. The HUD shows how many levels you've solved and your best on the current level. The end-of-level panel calls out a first clear or a new best. **reset progress** on the level select clears it all and locks every level but the first.
 
 ## Skills
 

@@ -14,10 +14,9 @@
       <header class="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
         <h1 class="font-pixel text-xl tracking-wide text-lime-300">Lemmings<span class="text-stone-500">.ts</span></h1>
         <div class="flex flex-wrap items-baseline gap-x-5 gap-y-1 text-xs text-stone-400">
-          <label class="flex items-baseline gap-1.5">
-            Level
-            <select id="hud-level" class="rounded border border-stone-700 bg-stone-900 px-1 py-0.5 text-stone-100 hover:bg-stone-800"></select>
-          </label>
+          <button id="hud-levels" type="button" title="Choose a level" class="flex items-baseline gap-1.5 rounded border border-stone-700 bg-stone-900 px-2 py-0.5 hover:bg-stone-800">
+            <kbd class="kbd">L</kbd> Level <span id="hud-level" class="text-stone-100">—</span>
+          </button>
           <span id="hud-progress" class="tabular-nums" title="Levels won at least once"></span>
           <span id="hud-best" class="tabular-nums" title="Your best on this level"></span>
           <span>Out <span id="hud-out" class="tabular-nums text-stone-100">0</span></span>
@@ -42,10 +41,24 @@
             <p id="result-news" class="mt-2 hidden font-pixel text-sm text-amber-300"></p>
             <p id="result-best" class="mt-1 text-xs text-stone-400"></p>
             <div class="mt-6 flex justify-center gap-3">
+              <button id="result-levels" type="button" class="rounded border border-stone-600 bg-stone-800 px-4 py-1.5 font-pixel text-sm text-stone-100 hover:bg-stone-700">Levels <kbd class="kbd">L</kbd></button>
               <button id="result-retry" type="button" class="rounded border border-stone-600 bg-stone-800 px-4 py-1.5 font-pixel text-sm text-stone-100 hover:bg-stone-700">Retry <kbd class="kbd">R</kbd></button>
               <button id="result-next" type="button" class="rounded border border-lime-500 bg-lime-600/20 px-4 py-1.5 font-pixel text-sm text-lime-200 hover:bg-lime-600/40">Next level <kbd class="kbd">N</kbd></button>
             </div>
           </div>
+        </div>
+
+        <!-- Level select: covers the viewport; the simulation is frozen while it's open -->
+        <div id="levels" class="absolute inset-0 z-10 hidden flex-col overflow-y-auto rounded-lg bg-stone-950/90 px-6 py-5 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="levels-title">
+          <div class="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
+            <h2 id="levels-title" class="font-pixel text-2xl text-lime-300">Choose a level</h2>
+            <div class="flex flex-wrap items-baseline gap-x-4 gap-y-1 whitespace-nowrap text-xs text-stone-400">
+              <span id="levels-solved" class="tabular-nums"></span>
+              <button id="levels-reset" type="button" class="hover:text-red-300">reset progress</button>
+              <button id="levels-close" type="button" class="hover:text-stone-200"><kbd class="kbd">Esc</kbd> back to game</button>
+            </div>
+          </div>
+          <ol id="levels-grid" class="mt-5 grid grid-cols-[repeat(auto-fill,minmax(14rem,1fr))] gap-3"></ol>
         </div>
       </main>
 
@@ -64,7 +77,6 @@
         <div class="flex gap-4">
           <span><kbd class="kbd">1</kbd>–<kbd class="kbd">8</kbd> select · drag terrain · click a lemming</span>
           <button id="hud-restart" type="button" class="hover:text-stone-200"><kbd class="kbd">R</kbd> restart</button>
-          <button id="hud-reset-progress" type="button" class="hover:text-red-300">reset progress</button>
           <span><kbd class="kbd">−</kbd><kbd class="kbd">+</kbd> rate</span>
           <span><kbd class="kbd">F</kbd> fast</span>
           <span><kbd class="kbd">G</kbd> grid</span>

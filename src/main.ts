@@ -18,6 +18,7 @@ function browserStorage(): KeyValueStore | null {
 const progress = new Progress(browserStorage());
 const game = new Game(canvas, viewport, LEVELS, progress);
 game.loadLevel(progress.resumeIndex(LEVELS.map((l) => l.name)));
+game.openLevelSelect();
 game.start();
 
 // Dev-only handle for poking at state from the browser console.

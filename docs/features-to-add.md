@@ -4,7 +4,7 @@
 
 Two levels is the biggest gap. Levels are ASCII maps in `levels.ts`, and `levels.test.ts` already proves each one can be won, so new levels are mostly design work.
 
-- ~~Add a level select screen with progress saved in `localStorage` (which levels are done, and your best saved count on each).~~ Done: a level picker in the HUD, backed by `src/progress/Progress.ts`. A full-screen select screen is still an option.
+- ~~Add a level select screen with progress saved in `localStorage` (which levels are done, and your best saved count on each).~~ Done: a full-screen level select with levels unlocked in order, backed by `src/progress/Progress.ts`.
 - Add difficulty ramps: a time limit, tighter tool charges, and higher save targets.
 
 ## 2. Classic Lemmings Skills Given to Individual Lemmings

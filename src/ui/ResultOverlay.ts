@@ -23,8 +23,9 @@ export class ResultOverlay {
   private readonly best = byId("result-best");
   private readonly next = byId<HTMLButtonElement>("result-next");
 
-  constructor(handlers: { onRetry: () => void; onNext: () => void }) {
+  constructor(handlers: { onRetry: () => void; onNext: () => void; onLevels: () => void }) {
     byId("result-retry").addEventListener("click", handlers.onRetry);
+    byId("result-levels").addEventListener("click", handlers.onLevels);
     this.next.addEventListener("click", handlers.onNext);
   }
 

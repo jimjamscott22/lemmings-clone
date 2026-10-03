@@ -93,12 +93,39 @@ describe("Progress", () => {
     expect(p.resumeIndex(NAMES)).toBe(0);
     p.record("One", { won: true, saved: 5, time: 1 });
     expect(p.resumeIndex(NAMES)).toBe(1);
-    p.setLastLevel("Three");
-    expect(p.resumeIndex(NAMES)).toBe(2);
+    p.setLastLevel("One");
+    expect(p.resumeIndex(NAMES)).toBe(0);
     // A last level that no longer exists is ignored.
     p.setLastLevel("Removed");
     expect(p.resumeIndex(NAMES)).toBe(1);
     for (const name of NAMES) p.record(name, { won: true, saved: 5, time: 1 });
+    expect(p.resumeIndex(NAMES)).toBe(0);
+  });
+
+  it("unlocks levels in order as each one is solved", () => {
+    const p = new Progress(memoryStore());
+    const unlocked = () => NAMES.map((_, i) => p.isUnlocked(NAMES, i));
+    expect(unlocked()).toEqual([true, false, false]);
+    p.record("One", { won: false, saved: 1, time: 1 });
+    expect(unlocked()).toEqual([true, false, false]);
+    p.record("One", { won: true, saved: 5, time: 1 });
+    expect(unlocked()).toEqual([true, true, false]);
+    p.record("Two", { won: true, saved: 5, time: 1 });
+    expect(unlocked()).toEqual([true, true, true]);
+    expect(p.isUnlocked(NAMES, 3)).toBe(false);
+    expect(p.isUnlocked(NAMES, -1)).toBe(false);
+  });
+
+  it("keeps a solved level unlocked when a new level is inserted before it", () => {
+    const p = new Progress(memoryStore());
+    p.record("Two", { won: true, saved: 5, time: 1 });
+    expect(p.isUnlocked(["One", "New", "Two"], 2)).toBe(true);
+    expect(p.isUnlocked(["One", "New", "Two"], 1)).toBe(false);
+  });
+
+  it("doesn't resume at a level that is locked", () => {
+    const p = new Progress(memoryStore());
+    p.setLastLevel("Three");
     expect(p.resumeIndex(NAMES)).toBe(0);
   });
 

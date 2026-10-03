@@ -7,6 +7,7 @@ import { Renderer } from "../render/Renderer";
 import { ACTION_ORDER, actionInfo } from "../tools/actions";
 import { Toolbox } from "../tools/Toolbox";
 import { byId, Hud } from "../ui/Hud";
+import { LevelSelect } from "../ui/LevelSelect";
 import { ResultOverlay } from "../ui/ResultOverlay";
 import { parseLevel, type Level, type LevelData } from "../world/Level";
 import { GameLoop } from "./GameLoop";
@@ -39,6 +40,7 @@ export class Game {
   private readonly input: Input;
   private readonly hud: Hud;
   private readonly overlay: ResultOverlay;
+  private readonly levelSelect: LevelSelect;
 
   private levelIndex = 0;
   private session: Session | null = null;
@@ -62,11 +64,19 @@ export class Game {
     this.hud = new Hud({
       onSelectTool: (id) => this.session?.tools.select(id),
       onAdjustRate: (delta) => this.session?.crowd.adjustReleaseRate(delta),
-      onSelectLevel: (index) => this.loadLevel(index),
+      onOpenLevels: () => this.openLevelSelect(),
     });
-    this.overlay = new ResultOverlay({ onRetry: () => this.restart(), onNext: () => this.nextLevel() });
+    this.overlay = new ResultOverlay({
+      onRetry: () => this.restart(),
+      onNext: () => this.nextLevel(),
+      onLevels: () => this.openLevelSelect(),
+    });
+    this.levelSelect = new LevelSelect({
+      onChoose: (index) => this.chooseLevel(index),
+      onClose: () => this.levelSelect.close(),
+      onReset: () => this.resetProgress(),
+    });
     byId("hud-restart").addEventListener("click", () => this.restart());
-    byId("hud-reset-progress").addEventListener("click", () => this.resetProgress());
     this.showGrid = progress.settings.showGrid;
     this.loop = new GameLoop({
       update: (dt) => this.update(dt),
@@ -89,9 +99,34 @@ export class Game {
     };
     this.time = 0;
     this.renderer.setLevel(level);
+    this.hud.setLevelName(`${index + 1}. ${data.name}`);
     this.progress.setLastLevel(data.name);
     this.refreshProgress();
     this.overlay.hide();
+    this.levelSelect.close();
+  }
+
+  /** Load a level from the level select; locked levels can't be chosen. */
+  chooseLevel(index: number): void {
+    if (this.progress.isUnlocked(this.levelNames, index)) this.loadLevel(index);
+  }
+
+  /** Show the level select. The simulation is frozen while it's open. */
+  openLevelSelect(): void {
+    const cards = this.levels.map((data, i) => ({
+      name: data.name,
+      lemmingCount: data.lemmingCount,
+      requiredToSave: data.requiredToSave,
+      unlocked: this.progress.isUnlocked(this.levelNames, i),
+      record: this.progress.get(data.name),
+    }));
+    this.levelSelect.open(cards, this.levelIndex);
+    // Unhandled presses (e.g. an Esc during play) are still queued; don't let them close it at once.
+    this.input.clearPresses();
+  }
+
+  private get levelNames(): string[] {
+    return this.levels.map((l) => l.name);
   }
 
   restart(): void {
@@ -103,12 +138,13 @@ export class Game {
     this.loadLevel((this.levelIndex + 1) % this.levels.length);
   }
 
-  /** Forget solved levels and bests (after confirming), then restart the current level. */
+  /** Forget solved levels and bests (after confirming), which locks everything but level 1 again. */
   resetProgress(): void {
     if (!confirm("Forget which levels you've solved and all your best scores?")) return;
     this.progress.reset();
     this.showGrid = false;
-    this.restart();
+    this.loadLevel(0);
+    this.openLevelSelect();
   }
 
   start(): void {
@@ -137,6 +173,7 @@ export class Game {
   }
 
   private update(dt: number): void {
+    if (this.levelSelect.isOpen) return this.handleLevelSelectInput();
     this.handleKeys();
     if (!this.session) return;
     this.handleReleaseRate(this.session, dt);
@@ -170,10 +207,17 @@ export class Game {
     });
   }
 
-  /** Level picker (with solved marks) and the personal best for the current level. */
+  /** While the level select is open, only Esc / L (close) count; everything else is dropped. */
+  private handleLevelSelectInput(): void {
+    if (this.input.consumePress("Escape") || this.input.consumePress("KeyL")) this.levelSelect.close();
+    this.input.clearPresses();
+    this.input.consumeStroke();
+    this.input.consumeClicks();
+  }
+
+  /** Solved count and the personal best for the current level. */
   private refreshProgress(): void {
-    const entries = this.levels.map(({ name }) => ({ name, solved: this.progress.isSolved(name) }));
-    this.hud.setLevels(entries, this.levelIndex);
+    this.hud.setSolved(this.progress.solvedCount(this.levelNames), this.levels.length);
     const data = this.levels[this.levelIndex]!;
     const record = this.progress.get(data.name);
     this.hud.setBest(
@@ -186,6 +230,7 @@ export class Game {
       this.showGrid = !this.showGrid;
       this.progress.updateSettings({ showGrid: this.showGrid });
     }
+    if (this.input.consumePress("KeyL")) return this.openLevelSelect();
     if (this.input.consumePress("KeyR")) return this.restart();
     if (this.input.consumePress("KeyN") && this.session?.outcome === "won") return this.nextLevel();
     if (this.input.consumePress("KeyF")) {

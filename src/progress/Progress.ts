@@ -80,6 +80,16 @@ export class Progress {
     return (this.data.levels[levelName]?.wins ?? 0) > 0;
   }
 
+  /**
+   * Levels unlock in order: the first is always open, and each later one opens once the one
+   * before it is solved. A level already solved stays open even if levels are reordered.
+   */
+  isUnlocked(levelNames: readonly string[], index: number): boolean {
+    const name = levelNames[index];
+    if (name === undefined) return false;
+    return index === 0 || this.isSolved(name) || this.isSolved(levelNames[index - 1]!);
+  }
+
   /** How many of the given levels have been won at least once. */
   solvedCount(levelNames: readonly string[]): number {
     return levelNames.filter((name) => this.isSolved(name)).length;
@@ -108,10 +118,10 @@ export class Progress {
     return { record: { ...rec }, firstWin: result.won && prev.wins === 0, newBestSaved, newFastestWin };
   }
 
-  /** Index to start at: the level last played, or else the first unsolved one. */
+  /** Index to start at: the level last played (if still unlocked), or else the first unsolved one. */
   resumeIndex(levelNames: readonly string[]): number {
     const last = this.data.lastLevel === null ? -1 : levelNames.indexOf(this.data.lastLevel);
-    if (last >= 0) return last;
+    if (last >= 0 && this.isUnlocked(levelNames, last)) return last;
     const unsolved = levelNames.findIndex((name) => !this.isSolved(name));
     return unsolved >= 0 ? unsolved : 0;
   }
