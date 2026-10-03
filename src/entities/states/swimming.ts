@@ -4,6 +4,7 @@ import { TileType } from "../../world/TileType";
 import type { Lemming } from "../Lemming";
 import { toTile } from "../World";
 import type { LemmingState } from "./LemmingState";
+import { stepOnto } from "./movement";
 
 /**
  * In the water: bob up to the surface and paddle forward. A swimmer that reaches a low bank
@@ -35,7 +36,7 @@ export const swimming: LemmingState = {
     const aheadCol = toTile(nx + l.dir * LEMMING_HALF_WIDTH);
     if (grid.isSolid(aheadCol, surface)) {
       if (!grid.isSolid(aheadCol, surface - 1) && aheadCol >= 0 && aheadCol < grid.cols) {
-        climbOut(l, aheadCol, surface);
+        stepOnto(l, aheadCol, surface);
         return l.setState("walking", world);
       }
       l.dir = l.dir === 1 ? -1 : 1; // sheer bank: try the other way
@@ -60,9 +61,3 @@ function surfaceRow(grid: Grid, col: number, row: number): number {
   return r;
 }
 
-/** Step up onto the bank tile ahead and stand on its top edge. */
-function climbOut(l: Lemming, bankCol: number, bankRow: number): void {
-  const inset = LEMMING_HALF_WIDTH + 1;
-  l.x = l.dir === 1 ? bankCol * TILE_SIZE + inset : (bankCol + 1) * TILE_SIZE - inset;
-  l.y = bankRow * TILE_SIZE;
-}

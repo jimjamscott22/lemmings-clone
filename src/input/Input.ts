@@ -15,6 +15,8 @@ export class Input {
    * between two simulation ticks is seen in full. A tile is a stroke point; null ends a stroke.
    */
   private readonly strokeQueue: Array<TilePoint | null> = [];
+  /** Canvas-pixel positions of primary-button presses, for clicking on lemmings. */
+  private readonly clickQueue: Array<{ x: number; y: number }> = [];
   private readonly pressed = new Set<string>();
   private readonly held = new Set<string>();
   private readonly controller = new AbortController();
@@ -39,6 +41,7 @@ export class Input {
         this.updatePointer(e);
         this.pointerDown = true;
         this.strokeQueue.push(this.pointerTile());
+        if (this.pointer) this.clickQueue.push({ ...this.pointer });
       },
       { signal },
     );
@@ -76,6 +79,11 @@ export class Input {
   /** Drains the drag samples recorded since the last call (null = stroke ended). */
   consumeStroke(): Array<TilePoint | null> {
     return this.strokeQueue.splice(0);
+  }
+
+  /** Drains the click positions recorded since the last call. */
+  consumeClicks(): Array<{ x: number; y: number }> {
+    return this.clickQueue.splice(0);
   }
 
   /** Grid tile under the pointer, or null. */

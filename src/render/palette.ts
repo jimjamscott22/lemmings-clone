@@ -33,6 +33,9 @@ export const PALETTE = {
   lemmingBody: "#3b82f6",
   lemmingBodyDark: "#1e40af",
   pick: "#d1d5db",
+  umbrella: "#f43f5e",
+  umbrellaDark: "#9f1239",
+  fuse: "#fde68a",
 } as const;
 
 /** Representative swatch per tile, for UI legends. */

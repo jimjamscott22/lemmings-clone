@@ -44,6 +44,11 @@ export class Grid {
     return TILE_PROPS[this.get(x, y)].solid;
   }
 
+  /** Can be dug, bashed, mined or blown up. Never true outside the map. */
+  isDiggable(x: number, y: number): boolean {
+    return TILE_PROPS[this.get(x, y)].diggable;
+  }
+
   /** Subscribe to tile changes. Returns an unsubscribe function. */
   onChange(listener: TileChangeListener): () => void {
     this.listeners.add(listener);

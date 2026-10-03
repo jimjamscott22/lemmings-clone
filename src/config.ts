@@ -52,3 +52,26 @@ export const DROWN_TIME = 0.8;
 export const FLOAT_DEPTH = 7;
 /** Seconds for the walk-into-the-door animation. */
 export const EXIT_TIME = 0.5;
+
+/** Falls longer than this (pixels) are fatal, unless the lemming is a floater. */
+export const SPLAT_HEIGHT = 9 * TILE_SIZE;
+/** Seconds of the splat animation before the lemming is gone. */
+export const SPLAT_TIME = 0.6;
+
+/* Skills given to individual lemmings. */
+
+/** Climbing speed up a wall face. */
+export const CLIMB_SPEED = 14;
+/** A floater opens its umbrella after falling this far, then drifts down at FLOAT_SPEED. */
+export const FLOATER_OPEN_HEIGHT = TILE_SIZE;
+export const FLOAT_SPEED = 40;
+/** Seconds from giving the Bomber skill to the explosion. */
+export const BOMB_FUSE = 5;
+/** Diggable tiles whose centre is within this many pixels of the bomber are blown away. */
+export const BOMB_RADIUS = 1.5 * TILE_SIZE;
+/** A walker heading toward a blocker turns around once their centres are this close. */
+export const BLOCKER_REACH = 6;
+/** Seconds to bash through one tile. */
+export const BASH_TIME = 0.4;
+/** Seconds to mine one diagonal step. */
+export const MINE_TIME = 0.9;

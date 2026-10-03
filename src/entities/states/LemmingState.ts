@@ -14,4 +14,17 @@ export interface LemmingState {
   update(lemming: Lemming, world: World, dt: number): void;
 }
 
-export type StateName = "falling" | "walking" | "jumping" | "digging" | "building" | "swimming" | "exiting";
+export type StateName =
+  | "falling"
+  | "walking"
+  | "jumping"
+  | "digging"
+  | "building"
+  | "swimming"
+  | "exiting"
+  | "splatting"
+  // Jobs given by the player's skills:
+  | "climbing"
+  | "blocking"
+  | "bashing"
+  | "mining";

@@ -51,7 +51,7 @@ describe("Hazards and the goal", () => {
       map: ["S.....G", "#######"],
     });
     const crowd = new Crowd(level);
-    for (let i = 0; i < 60 * 20 && !crowd.finished; i++) crowd.update({ grid: level.grid }, 1 / 60);
+    for (let i = 0; i < 60 * 20 && !crowd.finished; i++) crowd.update({ grid: level.grid, lemmings: crowd.lemmings }, 1 / 60);
     expect(crowd.finished).toBe(true);
     expect(crowd.saved).toBe(3);
     expect(crowd.lost).toBe(0);
