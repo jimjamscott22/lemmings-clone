@@ -19,8 +19,17 @@ export const WALK_SPEED = 20;
 export const LEMMING_HEIGHT = 10;
 export const LEMMING_HALF_WIDTH = 3;
 
-/** Seconds between lemmings dropping out of the hatch. */
+/** Seconds between lemmings dropping out of the hatch at the default release rate. */
 export const SPAWN_INTERVAL = 1.5;
+
+/** Release rate, as in the original: 1 (slowest) to 99 (fastest). Adjustable with +/- during play. */
+export const RELEASE_RATE_MIN = 1;
+export const RELEASE_RATE_MAX = 99;
+export const RELEASE_RATE_DEFAULT = 50;
+/** Seconds of spawn interval removed per rate point above the default (added per point below). */
+export const RELEASE_RATE_STEP = 0.025;
+/** Rate points per second while +/- is held down. */
+export const RELEASE_RATE_HOLD_SPEED = 20;
 
 /** Launch speeds for a jump. Tuned so the arc clears exactly one tile and lands on top of it. */
 export const JUMP_SPEED = 185;

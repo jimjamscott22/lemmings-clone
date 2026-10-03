@@ -16,6 +16,7 @@ export class Input {
    */
   private readonly strokeQueue: Array<TilePoint | null> = [];
   private readonly pressed = new Set<string>();
+  private readonly held = new Set<string>();
   private readonly controller = new AbortController();
 
   constructor(private readonly canvas: HTMLCanvasElement) {
@@ -53,14 +54,23 @@ export class Input {
         if (e.repeat) return;
         if (e.code === "Space") e.preventDefault(); // don't scroll the page
         this.pressed.add(e.code);
+        this.held.add(e.code);
       },
       { signal },
     );
+    window.addEventListener("keyup", (e) => this.held.delete(e.code), { signal });
+    // A key released while the window is unfocused never fires keyup.
+    window.addEventListener("blur", () => this.held.clear(), { signal });
   }
 
   /** True once per key press; clears the press. */
   consumePress(code: string): boolean {
     return this.pressed.delete(code);
+  }
+
+  /** True while the key is held down. */
+  isDown(code: string): boolean {
+    return this.held.has(code);
   }
 
   /** Drains the drag samples recorded since the last call (null = stroke ended). */

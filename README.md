@@ -19,7 +19,8 @@ npm run build      # typecheck + production build
 | --- | --- |
 | Click and drag | Use the selected tool on every tile you sweep over |
 | `1` / `2` | Select **Dig** (remove dirt or bridge) / **Build** (place a bridge in open air) |
-| `Space` | Pause (you can still edit terrain while paused) |
+| `−` / `+` | Slow down / speed up the release rate (1–99; hold to change quickly, or use the HUD buttons) |
+| `Space` | Pause (you can still edit terrain and the release rate while paused) |
 | `F` | Fast-forward ×3 |
 | `R` | Restart the level |
 | `N` | Next level (after a win) |

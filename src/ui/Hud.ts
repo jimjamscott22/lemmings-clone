@@ -28,13 +28,23 @@ export class Hud {
   private readonly toolsEl = byId("hud-tools");
   private readonly toolButtons = new Map<ToolId, { button: HTMLButtonElement; count: HTMLElement }>();
   private lastToolsKey = "";
+  private readonly rateEl = byId("hud-rate");
+  private lastRate = -1;
 
   private lastFpsUpdate = 0;
   private lastTileText = "";
 
-  constructor(onSelectTool: (id: ToolId) => void) {
+  constructor(handlers: { onSelectTool: (id: ToolId) => void; onAdjustRate: (delta: number) => void }) {
     this.buildLegend();
-    this.buildToolbar(onSelectTool);
+    this.buildToolbar(handlers.onSelectTool);
+    byId("hud-rate-down").addEventListener("click", () => handlers.onAdjustRate(-1));
+    byId("hud-rate-up").addEventListener("click", () => handlers.onAdjustRate(1));
+  }
+
+  setReleaseRate(rate: number): void {
+    if (rate === this.lastRate) return;
+    this.lastRate = rate;
+    this.rateEl.textContent = String(rate);
   }
 
   /** Highlights the selected tool and shows remaining charges. */

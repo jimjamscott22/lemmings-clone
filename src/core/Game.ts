@@ -1,3 +1,4 @@
+import { RELEASE_RATE_HOLD_SPEED } from "../config";
 import { Crowd } from "../entities/Crowd";
 import type { World } from "../entities/World";
 import { Input } from "../input/Input";
@@ -22,6 +23,11 @@ interface Session {
 /** Simulation steps per tick in fast-forward. */
 const FAST_SPEED = 3;
 
+const RATE_UP_KEYS = ["Equal", "NumpadAdd"];
+const RATE_DOWN_KEYS = ["Minus", "NumpadSubtract"];
+/** Seconds a +/- key must be held before the rate starts auto-repeating. */
+const RATE_REPEAT_DELAY = 0.3;
+
 /**
  * Top-level orchestrator: owns the loop and the current session, and wires
  * input → simulation → rendering → HUD.
@@ -40,6 +46,9 @@ export class Game {
   private paused = false;
   private showGrid = false;
   private fast = false;
+  /** Seconds the current +/- key has been held, and fractional rate points not yet applied. */
+  private rateHeldFor = 0;
+  private rateCarry = 0;
 
   constructor(
     canvas: HTMLCanvasElement,
@@ -48,7 +57,10 @@ export class Game {
   ) {
     this.renderer = new Renderer(canvas, viewport);
     this.input = new Input(canvas);
-    this.hud = new Hud((id) => this.session?.tools.select(id));
+    this.hud = new Hud({
+      onSelectTool: (id) => this.session?.tools.select(id),
+      onAdjustRate: (delta) => this.session?.crowd.adjustReleaseRate(delta),
+    });
     this.overlay = new ResultOverlay({ onRetry: () => this.restart(), onNext: () => this.nextLevel() });
     byId("hud-restart").addEventListener("click", () => this.restart());
     this.loop = new GameLoop({
@@ -105,6 +117,7 @@ export class Game {
   private update(dt: number): void {
     this.handleKeys();
     if (!this.session) return;
+    this.handleReleaseRate(this.session, dt);
     this.handleTools(this.session);
     if (this.session.outcome || this.paused) return;
 
@@ -147,6 +160,33 @@ export class Game {
     }
   }
 
+  /**
+   * +/- nudge the release rate by one per tap; holding auto-repeats after a short delay.
+   * Works while paused, like terrain editing. `dt` is real (not fast-forwarded) time.
+   */
+  private handleReleaseRate({ crowd, outcome }: Session, dt: number): void {
+    // Always drain presses, so a tap during the result screen doesn't carry over.
+    const taps =
+      RATE_UP_KEYS.filter((k) => this.input.consumePress(k)).length -
+      RATE_DOWN_KEYS.filter((k) => this.input.consumePress(k)).length;
+    const dir =
+      Number(RATE_UP_KEYS.some((k) => this.input.isDown(k))) - Number(RATE_DOWN_KEYS.some((k) => this.input.isDown(k)));
+    if (outcome) return;
+    if (taps) crowd.adjustReleaseRate(taps);
+
+    if (dir === 0) {
+      this.rateHeldFor = 0;
+      this.rateCarry = 0;
+      return;
+    }
+    this.rateHeldFor += dt;
+    if (this.rateHeldFor < RATE_REPEAT_DELAY) return;
+    this.rateCarry += dt * RELEASE_RATE_HOLD_SPEED;
+    const steps = Math.floor(this.rateCarry);
+    this.rateCarry -= steps;
+    if (steps) crowd.adjustReleaseRate(dir * steps);
+  }
+
   /** Terrain editing works while paused too, so the player can plan. Locked once the level ends. */
   private handleTools({ tools, outcome }: Session): void {
     const strokes = this.input.consumeStroke(); // always drain, so nothing leaks into the next level
@@ -172,6 +212,7 @@ export class Game {
     this.hud.setHoverTile(level.grid, hoverTile);
     this.hud.setTools(tools.selected, tools.charges);
     this.hud.setStats({ out: crowd.active, saved: crowd.saved, need: level.data.requiredToSave, lost: crowd.lost });
+    this.hud.setReleaseRate(crowd.releaseRate);
     this.hud.setFps(this.loop.fps, performance.now());
   }
 }

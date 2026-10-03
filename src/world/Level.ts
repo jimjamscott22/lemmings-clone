@@ -15,6 +15,8 @@ export interface LevelData {
   lemmingCount: number;
   /** Lemmings that must reach the goal to win. */
   requiredToSave: number;
+  /** Starting release rate, 1–99 (default RELEASE_RATE_DEFAULT). The player can change it. */
+  releaseRate?: number;
   /** Bridge blocks each lemming carries for auto-building (default 0). */
   bricks?: number;
   /** Player tool charges: tiles that can be dug out / bridged in (default 0). */
