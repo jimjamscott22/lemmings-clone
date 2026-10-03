@@ -1,4 +1,4 @@
-import { TILE_SIZE } from "../config";
+import { LEMMING_HALF_WIDTH, LEMMING_HEIGHT, TILE_SIZE } from "../config";
 import type { Lemming } from "../entities/Lemming";
 import type { Level, TilePoint } from "../world/Level";
 import { drawLemming } from "./lemmingArt";
@@ -10,7 +10,9 @@ export interface RenderState {
   time: number;
   showGrid: boolean;
   hoverTile: TilePoint | null;
-  /** Whether the selected tool can be used on the hovered tile; colours the cursor. */
+  /** Lemming under the pointer while a skill is selected. */
+  hoverLemming: Lemming | null;
+  /** Whether the selected tool / skill can be used on the hovered tile / lemming; colours the cursor. */
   hoverValid: boolean;
   lemmings: readonly Lemming[];
 }
@@ -56,6 +58,7 @@ export class Renderer {
 
     if (state.showGrid) this.drawGridLines(canvas.width, canvas.height);
     if (state.hoverTile) this.drawHover(state.hoverTile, state.hoverValid);
+    if (state.hoverLemming) this.drawLemmingHover(state.hoverLemming, state.hoverValid);
   }
 
   private drawGridLines(w: number, h: number): void {
@@ -71,6 +74,25 @@ export class Renderer {
     ctx.lineWidth = 1;
     // +0.5 aligns a 1px stroke to the pixel grid
     ctx.strokeRect(x * TILE_SIZE + 0.5, y * TILE_SIZE + 0.5, TILE_SIZE - 1, TILE_SIZE - 1);
+  }
+
+  /** Corner brackets around the lemming a click would target. */
+  private drawLemmingHover(l: Lemming, valid: boolean): void {
+    const { ctx } = this;
+    ctx.fillStyle = valid ? PALETTE.hoverOk : PALETTE.hoverBad;
+    const left = Math.round(l.x) - LEMMING_HALF_WIDTH - 3;
+    const right = Math.round(l.x) + LEMMING_HALF_WIDTH + 2;
+    const top = Math.round(l.y) - LEMMING_HEIGHT - 3;
+    const bottom = Math.round(l.y) + 1;
+    for (const [x, y, sx, sy] of [
+      [left, top, 1, 1],
+      [right, top, -1, 1],
+      [left, bottom, 1, -1],
+      [right, bottom, -1, -1],
+    ] as const) {
+      ctx.fillRect(sx === 1 ? x : x - 2, y, 3, 1);
+      ctx.fillRect(x, sy === 1 ? y : y - 2, 1, 3);
+    }
   }
 
   private buildBackground(w: number, h: number): HTMLCanvasElement {

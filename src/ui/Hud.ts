@@ -2,7 +2,7 @@ import { TILE_SWATCH } from "../render/palette";
 import type { Grid } from "../world/Grid";
 import type { TilePoint } from "../world/Level";
 import { TILE_PROPS, TileType } from "../world/TileType";
-import { TOOL_ORDER, TOOLS, type ToolId } from "../tools/tools";
+import { ACTION_ORDER, actionInfo, isSkill, type ActionId } from "../tools/actions";
 
 export function byId<T extends HTMLElement>(id: string): T {
   const el = document.getElementById(id);
@@ -26,7 +26,7 @@ export class Hud {
   private lastStatsKey = "";
   private readonly legendEl = byId<HTMLUListElement>("hud-legend");
   private readonly toolsEl = byId("hud-tools");
-  private readonly toolButtons = new Map<ToolId, { button: HTMLButtonElement; count: HTMLElement }>();
+  private readonly toolButtons = new Map<ActionId, { button: HTMLButtonElement; count: HTMLElement }>();
   private lastToolsKey = "";
   private readonly rateEl = byId("hud-rate");
   private lastRate = -1;
@@ -34,7 +34,7 @@ export class Hud {
   private lastFpsUpdate = 0;
   private lastTileText = "";
 
-  constructor(handlers: { onSelectTool: (id: ToolId) => void; onAdjustRate: (delta: number) => void }) {
+  constructor(handlers: { onSelectTool: (id: ActionId) => void; onAdjustRate: (delta: number) => void }) {
     this.buildLegend();
     this.buildToolbar(handlers.onSelectTool);
     byId("hud-rate-down").addEventListener("click", () => handlers.onAdjustRate(-1));
@@ -47,9 +47,9 @@ export class Hud {
     this.rateEl.textContent = String(rate);
   }
 
-  /** Highlights the selected tool and shows remaining charges. */
-  setTools(selected: ToolId, charges: Readonly<Record<ToolId, number>>): void {
-    const key = `${selected}|${TOOL_ORDER.map((id) => charges[id]).join(",")}`;
+  /** Highlights the selected tool or skill and shows remaining charges. */
+  setTools(selected: ActionId, charges: Readonly<Record<ActionId, number>>): void {
+    const key = `${selected}|${ACTION_ORDER.map((id) => charges[id]).join(",")}`;
     if (key === this.lastToolsKey) return;
     this.lastToolsKey = key;
     for (const [id, { button, count }] of this.toolButtons) {
@@ -98,22 +98,32 @@ export class Hud {
     this.fpsEl.textContent = Math.round(fps).toString();
   }
 
-  private buildToolbar(onSelect: (id: ToolId) => void): void {
-    for (const [i, id] of TOOL_ORDER.entries()) {
+  /** One button per tool and skill, with a divider between the two groups. */
+  private buildToolbar(onSelect: (id: ActionId) => void): void {
+    const children: HTMLElement[] = [];
+    for (const [i, id] of ACTION_ORDER.entries()) {
+      if (i > 0 && isSkill(id) && !isSkill(ACTION_ORDER[i - 1]!)) {
+        const divider = document.createElement("span");
+        divider.className = "mx-1 w-px self-stretch bg-stone-700";
+        children.push(divider);
+      }
+      const { name, hint } = actionInfo(id);
       const button = document.createElement("button");
       button.type = "button";
+      button.title = hint;
       button.className =
-        "flex items-center gap-2 rounded border border-stone-700 bg-stone-900 px-2.5 py-1 font-pixel text-stone-300 hover:bg-stone-800";
+        "flex items-center gap-1.5 rounded border border-stone-700 bg-stone-900 px-2 py-1 font-pixel text-stone-300 hover:bg-stone-800";
       const count = document.createElement("span");
       count.className = "tabular-nums text-stone-100";
-      const hint = document.createElement("kbd");
-      hint.className = "kbd";
-      hint.textContent = String(i + 1);
-      button.append(hint, TOOLS[id].name, count);
+      const key = document.createElement("kbd");
+      key.className = "kbd";
+      key.textContent = String(i + 1);
+      button.append(key, name, count);
       button.addEventListener("click", () => onSelect(id));
       this.toolButtons.set(id, { button, count });
+      children.push(button);
     }
-    this.toolsEl.replaceChildren(...[...this.toolButtons.values()].map((b) => b.button));
+    this.toolsEl.replaceChildren(...children);
   }
 
   private buildLegend(): void {

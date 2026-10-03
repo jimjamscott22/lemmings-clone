@@ -3,8 +3,8 @@ import { Crowd } from "../entities/Crowd";
 import type { World } from "../entities/World";
 import { Input } from "../input/Input";
 import { Renderer } from "../render/Renderer";
+import { ACTION_ORDER, actionInfo } from "../tools/actions";
 import { Toolbox } from "../tools/Toolbox";
-import { TOOL_ORDER, TOOLS } from "../tools/tools";
 import { byId, Hud } from "../ui/Hud";
 import { ResultOverlay } from "../ui/ResultOverlay";
 import { parseLevel, type Level, type LevelData } from "../world/Level";
@@ -74,10 +74,11 @@ export class Game {
     this.levelIndex = index;
     const data = this.levels[index]!;
     const level = parseLevel(data);
+    const crowd = new Crowd(level);
     this.session = {
       level,
-      world: { grid: level.grid },
-      crowd: new Crowd(level),
+      world: { grid: level.grid, lemmings: crowd.lemmings },
+      crowd,
       tools: new Toolbox(level),
       outcome: null,
     };
@@ -110,7 +111,13 @@ export class Game {
       lost: c?.lost,
       outcome: this.session?.outcome,
       tools: this.session?.tools.charges,
-      lemmings: c?.lemmings.map((l) => `${l.state.name}@${l.col},${l.bodyRow}`),
+      lemmings: c?.lemmings.map(
+        (l) =>
+          `${l.state.name}@${l.col},${l.bodyRow}` +
+          (l.climber ? " climber" : "") +
+          (l.floater ? " floater" : "") +
+          (l.fuse !== null ? ` fuse=${l.fuse.toFixed(1)}` : ""),
+      ),
     };
   }
 
@@ -155,8 +162,8 @@ export class Game {
       this.paused = !this.paused;
       this.hud.setPaused(this.paused);
     }
-    for (const id of TOOL_ORDER) {
-      if (this.input.consumePress(TOOLS[id].key)) this.session?.tools.select(id);
+    for (const id of ACTION_ORDER) {
+      if (this.input.consumePress(actionInfo(id).key)) this.session?.tools.select(id);
     }
   }
 
@@ -187,10 +194,22 @@ export class Game {
     if (steps) crowd.adjustReleaseRate(dir * steps);
   }
 
-  /** Terrain editing works while paused too, so the player can plan. Locked once the level ends. */
-  private handleTools({ tools, outcome }: Session): void {
-    const strokes = this.input.consumeStroke(); // always drain, so nothing leaks into the next level
+  /**
+   * Terrain editing and skill assignment work while paused too, so the player can plan.
+   * Locked once the level ends.
+   */
+  private handleTools({ tools, crowd, world, outcome }: Session): void {
+    // Always drain, so nothing leaks into the next level.
+    const strokes = this.input.consumeStroke();
+    const clicks = this.input.consumeClicks();
     if (outcome) return;
+    if (tools.selectedSkill) {
+      for (const p of clicks) {
+        const target = crowd.lemmingAt(p, (l) => tools.canAssign(l));
+        if (target) tools.assign(target, world);
+      }
+      return;
+    }
     for (const tile of strokes) {
       if (tile) tools.stroke(tile);
       else tools.endStroke();
@@ -201,12 +220,16 @@ export class Game {
     if (!this.session) return;
     const { level, crowd, tools } = this.session;
     const hoverTile = this.input.pointerTile();
+    const { pointer } = this.input;
+    const skillMode = tools.selectedSkill !== null;
+    const hoverLemming = skillMode && pointer ? crowd.lemmingAt(pointer, (l) => tools.canAssign(l)) : null;
 
     this.renderer.draw({
       time: this.time,
       showGrid: this.showGrid,
-      hoverTile,
-      hoverValid: hoverTile !== null && tools.canUseAt(hoverTile),
+      hoverTile: skillMode ? null : hoverTile,
+      hoverValid: skillMode ? hoverLemming !== null && tools.canAssign(hoverLemming) : hoverTile !== null && tools.canUseAt(hoverTile),
+      hoverLemming,
       lemmings: crowd.lemmings,
     });
     this.hud.setHoverTile(level.grid, hoverTile);

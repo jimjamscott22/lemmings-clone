@@ -1,3 +1,4 @@
+import type { SkillId } from "../skills/skills";
 import { Grid } from "./Grid";
 import { TileType } from "./TileType";
 
@@ -21,6 +22,8 @@ export interface LevelData {
   bricks?: number;
   /** Player tool charges: tiles that can be dug out / bridged in (default 0). */
   tools?: { dig?: number; build?: number };
+  /** Skills the player can give to individual lemmings, by count (default 0 each). */
+  skills?: Partial<Record<SkillId, number>>;
 }
 
 /** A parsed, playable level. */

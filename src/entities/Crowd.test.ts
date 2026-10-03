@@ -14,7 +14,7 @@ const DATA: LevelData = {
 function makeCrowd(data: Partial<LevelData> = {}) {
   const level = parseLevel({ ...DATA, ...data });
   const crowd = new Crowd(level);
-  const world = { grid: level.grid };
+  const world = { grid: level.grid, lemmings: crowd.lemmings };
   const runFor = (seconds: number) => {
     for (let i = 0; i < Math.round(seconds / FIXED_TIMESTEP); i++) crowd.update(world, FIXED_TIMESTEP);
   };

@@ -1,4 +1,6 @@
 import {
+  LEMMING_HALF_WIDTH,
+  LEMMING_HEIGHT,
   RELEASE_RATE_DEFAULT,
   RELEASE_RATE_MAX,
   RELEASE_RATE_MIN,
@@ -14,6 +16,9 @@ import type { World } from "./World";
 export function releaseInterval(rate: number): number {
   return SPAWN_INTERVAL - (rate - RELEASE_RATE_DEFAULT) * RELEASE_RATE_STEP;
 }
+
+/** Extra pixels around a lemming's body that still count as clicking it. */
+const PICK_SLACK = 2;
 
 const clampRate = (rate: number) => Math.min(RELEASE_RATE_MAX, Math.max(RELEASE_RATE_MIN, Math.round(rate)));
 
@@ -65,7 +70,37 @@ export class Crowd {
     }
 
     for (const l of this.lemmings) l.update(world, dt);
+    this.retireStrandedBlockers();
     this.removeFinished();
+  }
+
+  /**
+   * The lemming under a canvas-pixel point, or null. Overlapping lemmings are common, so among
+   * those hit it prefers ones `prefer` accepts (e.g. that can take the selected skill), then the
+   * one whose body centre is nearest.
+   */
+  lemmingAt(p: { x: number; y: number }, prefer: (l: Lemming) => boolean = () => true): Lemming | null {
+    let best: Lemming | null = null;
+    let bestScore = Infinity;
+    for (const l of this.lemmings) {
+      if (l.done) continue;
+      const dx = Math.abs(p.x - l.x);
+      const dy = Math.abs(p.y - (l.y - LEMMING_HEIGHT / 2));
+      if (dx > LEMMING_HALF_WIDTH + PICK_SLACK || dy > LEMMING_HEIGHT / 2 + PICK_SLACK) continue;
+      const score = Math.hypot(dx, dy) + (prefer(l) ? 0 : 1000);
+      if (score < bestScore) {
+        best = l;
+        bestScore = score;
+      }
+    }
+    return best;
+  }
+
+  /** Once everyone is out and only blockers remain, nothing can change: count them as lost. */
+  private retireStrandedBlockers(): void {
+    if (this.released < this.total || this.lemmings.length === 0) return;
+    if (!this.lemmings.every((l) => l.done || l.state.name === "blocking")) return;
+    for (const l of this.lemmings) if (!l.done) l.retire("lost");
   }
 
   private spawn(): void {
