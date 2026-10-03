@@ -31,8 +31,13 @@ npm run build      # typecheck + production build
 | `R` | Restart the level |
 | `N` | Next level (after a win) |
 | `G` | Toggle grid overlay |
+| Level picker | Jump to any level (solved ones are ticked) |
 
 Each tool and skill has limited charges per level, shown in the toolbar.
+
+## Progress
+
+Progress is saved in your browser's `localStorage`. For each level it keeps whether you've solved it, your best saved count, your fastest win, and how many attempts and wins you've had. It also remembers the level you last played (and resumes there) and whether the grid overlay is on. The HUD shows how many levels you've solved and your best on the current level. The end-of-level panel calls out a first clear or a new best. **reset progress** in the footer clears it all.
 
 ## Skills
 
@@ -79,6 +84,7 @@ src/
 ├── world/                Grid, TileType properties, ASCII level parser, and level data
 ├── render/               Canvas renderer, cached tile layer, tile and lemming pixel art
 ├── input/                Pointer and keyboard; drag samples are queued so fast strokes aren't missed
+├── progress/             Saved progress (solved levels, bests, resume point, settings) over a pluggable key-value store
 └── ui/                   Tailwind HUD and the end-of-level overlay
 ```
 

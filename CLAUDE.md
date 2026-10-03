@@ -19,11 +19,11 @@ npx vitest run src/skills/skills.test.ts -t "Climber"  # tests whose describe/it
 
 There is no linter configured. `tsconfig.json` is strict, with `noUnusedLocals`/`noUnusedParameters`, `verbatimModuleSyntax` (use `import type` for type-only imports) and `isolatedModules`. Code stays erasable TS: no `enum`; use a `const` object plus a union type (see `TileType.ts`).
 
-In dev, `window.game` is exposed; `game.debug()` returns a snapshot of time, tallies, tool charges and each lemming's `state@col,row`.
+In dev, `window.game` and `window.progress` are exposed; `game.debug()` returns a snapshot of time, tallies, tool charges, each lemming's `state@col,row`, and the current level's saved record.
 
 ## Architecture
 
-**Simulation vs. browser.** Everything under `world/`, `entities/`, `tools/` and `skills/` is DOM-free and runs headless in Vitest. Only `core/Game.ts`, `core/GameLoop.ts`, `input/`, `render/` and `ui/` touch the browser. Keep it that way: new gameplay logic must be testable without a canvas.
+**Simulation vs. browser.** Everything under `world/`, `entities/`, `tools/`, `skills/` and `progress/` is DOM-free and runs headless in Vitest. Only `core/Game.ts`, `core/GameLoop.ts`, `input/`, `render/` and `ui/` touch the browser. Keep it that way: new gameplay logic must be testable without a canvas.
 
 **Loop and session.** `GameLoop` is a fixed-timestep loop (`FIXED_TIMESTEP` = 1/60 s, frame time capped by `MAX_FRAME_TIME`) so physics is deterministic. `Game` owns a `Session` (level, world, crowd, toolbox, outcome) that is rebuilt from the pristine `LevelData` on every load or restart; nothing is reset in place. Fast-forward runs `crowd.update` 3× per tick. Terrain editing, skill assignment and release-rate changes are handled even while paused, but input queues are always drained so nothing leaks into the next level or past the result screen.
 
@@ -39,6 +39,8 @@ Before delegating to the current state, `Lemming.update` runs cross-cutting logi
 - `tools/actions.ts` merges both into one `ActionId` list (`ACTION_ORDER`) that drives key bindings, the HUD toolbar and the `Toolbox.charges` record. Charges come from `LevelData.tools` / `LevelData.skills`.
 
 **World and rendering.** `Grid` is a flat `Uint8Array` with listeners: always change tiles via `grid.set`, because `render/TileLayer` subscribes with `grid.onChange` to redraw its cached offscreen layer. Out of bounds, the left/right edges count as solid but top/bottom are open (falling off the bottom is death). Tile behaviour is data-driven by `TILE_PROPS` (`solid`, `diggable`, `hazard`, `animated`; animated tiles are redrawn every frame instead of cached). A new tile type needs a `TileType` entry, `TILE_PROPS`, a `LEGEND` character in `world/Level.ts`, and art in `render/tileArt.ts`.
+
+**Saved progress.** `progress/Progress.ts` keeps per-level records (attempts, wins, best saved, fastest win), the level to resume, and settings (grid overlay) as versioned JSON under one `localStorage` key. It is DOM-free: it takes a `KeyValueStore` (`localStorage` in `main.ts`, a `Map`-backed fake in tests, or `null` for memory only) and never throws on storage errors or bad data; `sanitize` validates every field on load. Records are keyed by **level name**, so renaming a level orphans its progress (a test enforces unique names). Changing the `SaveData` shape means bumping `VERSION`; old saves are then discarded, so add a migration in `sanitize` if they should survive. `Game.checkOutcome` records each finished attempt (mid-level restarts don't count), and `Game.refreshProgress` updates the level picker and best display.
 
 **Tuning.** All physics and timing constants (tile size, gravity, speeds, dig/build/bash/mine times, splat height, bomb radius, release rate) are in `src/config.ts`. Units are canvas pixels and seconds.
 

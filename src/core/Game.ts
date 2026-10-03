@@ -2,6 +2,7 @@ import { RELEASE_RATE_HOLD_SPEED } from "../config";
 import { Crowd } from "../entities/Crowd";
 import type { World } from "../entities/World";
 import { Input } from "../input/Input";
+import type { Progress } from "../progress/Progress";
 import { Renderer } from "../render/Renderer";
 import { ACTION_ORDER, actionInfo } from "../tools/actions";
 import { Toolbox } from "../tools/Toolbox";
@@ -54,15 +55,19 @@ export class Game {
     canvas: HTMLCanvasElement,
     viewport: HTMLElement,
     private readonly levels: readonly LevelData[],
+    private readonly progress: Progress,
   ) {
     this.renderer = new Renderer(canvas, viewport);
     this.input = new Input(canvas);
     this.hud = new Hud({
       onSelectTool: (id) => this.session?.tools.select(id),
       onAdjustRate: (delta) => this.session?.crowd.adjustReleaseRate(delta),
+      onSelectLevel: (index) => this.loadLevel(index),
     });
     this.overlay = new ResultOverlay({ onRetry: () => this.restart(), onNext: () => this.nextLevel() });
     byId("hud-restart").addEventListener("click", () => this.restart());
+    byId("hud-reset-progress").addEventListener("click", () => this.resetProgress());
+    this.showGrid = progress.settings.showGrid;
     this.loop = new GameLoop({
       update: (dt) => this.update(dt),
       render: () => this.render(),
@@ -84,7 +89,8 @@ export class Game {
     };
     this.time = 0;
     this.renderer.setLevel(level);
-    this.hud.setLevelName(`${index + 1}. ${data.name}`);
+    this.progress.setLastLevel(data.name);
+    this.refreshProgress();
     this.overlay.hide();
   }
 
@@ -95,6 +101,14 @@ export class Game {
   /** Advance after a win; wraps back to the first level after the last. */
   nextLevel(): void {
     this.loadLevel((this.levelIndex + 1) % this.levels.length);
+  }
+
+  /** Forget solved levels and bests (after confirming), then restart the current level. */
+  resetProgress(): void {
+    if (!confirm("Forget which levels you've solved and all your best scores?")) return;
+    this.progress.reset();
+    this.showGrid = false;
+    this.restart();
   }
 
   start(): void {
@@ -118,6 +132,7 @@ export class Game {
           (l.floater ? " floater" : "") +
           (l.fuse !== null ? ` fuse=${l.fuse.toFixed(1)}` : ""),
       ),
+      progress: this.session && this.progress.get(this.session.level.data.name),
     };
   }
 
@@ -141,17 +156,36 @@ export class Game {
     if (!crowd.finished) return;
     const required = level.data.requiredToSave;
     session.outcome = crowd.saved >= required ? "won" : "lost";
+    const won = session.outcome === "won";
+    const update = this.progress.record(level.data.name, { won, saved: crowd.saved, time: this.time });
+    this.refreshProgress();
     this.overlay.show({
-      won: session.outcome === "won",
+      won,
       saved: crowd.saved,
       required,
       total: crowd.total,
       hasNext: this.levels.length > 1,
+      time: this.time,
+      progress: update,
     });
   }
 
+  /** Level picker (with solved marks) and the personal best for the current level. */
+  private refreshProgress(): void {
+    const entries = this.levels.map(({ name }) => ({ name, solved: this.progress.isSolved(name) }));
+    this.hud.setLevels(entries, this.levelIndex);
+    const data = this.levels[this.levelIndex]!;
+    const record = this.progress.get(data.name);
+    this.hud.setBest(
+      record.attempts > 0 ? { saved: record.bestSaved, total: data.lemmingCount, fastestWin: record.fastestWin } : null,
+    );
+  }
+
   private handleKeys(): void {
-    if (this.input.consumePress("KeyG")) this.showGrid = !this.showGrid;
+    if (this.input.consumePress("KeyG")) {
+      this.showGrid = !this.showGrid;
+      this.progress.updateSettings({ showGrid: this.showGrid });
+    }
     if (this.input.consumePress("KeyR")) return this.restart();
     if (this.input.consumePress("KeyN") && this.session?.outcome === "won") return this.nextLevel();
     if (this.input.consumePress("KeyF")) {

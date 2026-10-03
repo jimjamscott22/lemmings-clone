@@ -50,6 +50,10 @@ describe("levels", () => {
     for (const data of LEVELS) expect(() => parseLevel(data)).not.toThrow();
   });
 
+  it("have unique names (saved progress is keyed by name)", () => {
+    expect(new Set(LEVELS.map((l) => l.name)).size).toBe(LEVELS.length);
+  });
+
   it("level 1 is lost without help (the pool drowns everyone who reaches it)", () => {
     const { crowd, required } = play(0, []);
     expect(crowd.finished).toBe(true);
