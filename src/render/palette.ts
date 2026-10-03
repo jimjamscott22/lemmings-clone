@@ -5,7 +5,8 @@ export const PALETTE = {
   skyTop: "#0b1026",
   skyBottom: "#2a1f3d",
   gridLine: "rgba(255,255,255,0.06)",
-  hover: "rgba(255,255,255,0.85)",
+  hoverOk: "#a3e635",
+  hoverBad: "#f87171",
 
   dirt: "#7a4a26",
   dirtDark: "#5a3419",
@@ -26,6 +27,12 @@ export const PALETTE = {
 
   goal: "#facc15",
   goalGlow: "rgba(250,204,21,0.35)",
+
+  lemmingHair: "#4ade80",
+  lemmingSkin: "#fcd7b0",
+  lemmingBody: "#3b82f6",
+  lemmingBodyDark: "#1e40af",
+  pick: "#d1d5db",
 } as const;
 
 /** Representative swatch per tile, for UI legends. */
