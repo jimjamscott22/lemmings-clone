@@ -4,6 +4,10 @@ A lightweight Lemmings-style puzzle game in TypeScript and the HTML5 Canvas API,
 
 Lemmings drop from a hatch and walk on their own. Shape the terrain in real time, and give individual lemmings jobs, so that enough of them reach the exit before they drown, splat, or fall into the void.
 
+<p align="center">
+  <img src="docs/screenshot.jpg" alt="Level 3, Lend a Hand: a blocker holds the crowd on a stone ledge while a miner digs a staircase down a dirt mesa toward the exit" width="800">
+</p>
+
 ## Running it
 
 ```bash
