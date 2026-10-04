@@ -59,3 +59,13 @@ describe("release rate", () => {
     expect(crowd.released).toBe(2);
   });
 });
+
+describe("spawning", () => {
+  it("a hatch far below the top of the map doesn't splat its lemmings on the first landing", () => {
+    // Fall damage is measured from where the fall started, which for a fresh spawn is the hatch itself.
+    const map = ["X.......X", "X.......X", "X.......X", "X.......X", "X.......X", "X.......X", "X.......X", "X.......X", "X.......X", "X.......X", "XS......X", "X.......X", "X.......X", "XXXXXXXXX"];
+    const { crowd, runFor } = makeCrowd({ map, lemmingCount: 1 });
+    runFor(1);
+    expect(crowd.lemmings[0]?.state.name).toBe("walking");
+  });
+});
