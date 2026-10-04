@@ -2,14 +2,15 @@ import { RELEASE_RATE_HOLD_SPEED } from "../config";
 import { Crowd } from "../entities/Crowd";
 import type { World } from "../entities/World";
 import { Input } from "../input/Input";
-import type { Progress } from "../progress/Progress";
+import type { KeyValueStore, Progress } from "../progress/Progress";
 import { Renderer } from "../render/Renderer";
 import { ACTION_ORDER, actionInfo } from "../tools/actions";
 import { Toolbox } from "../tools/Toolbox";
 import { byId, Hud } from "../ui/Hud";
 import { LevelSelect } from "../ui/LevelSelect";
-import { ResultOverlay } from "../ui/ResultOverlay";
+import { ResultOverlay, type LevelResult } from "../ui/ResultOverlay";
 import { parseLevel, type Level, type LevelData } from "../world/Level";
+import { EditorMode } from "./EditorMode";
 import { GameLoop } from "./GameLoop";
 
 /** Everything that belongs to one attempt at a level; rebuilt from scratch on (re)load. */
@@ -20,6 +21,8 @@ interface Session {
   readonly tools: Toolbox;
   /** Set once every lemming is accounted for; the simulation stops. */
   outcome: "won" | "lost" | null;
+  /** What the result panel showed, to bring it back after a visit to the level editor. */
+  result: LevelResult | null;
 }
 
 /** Simulation steps per tick in fast-forward. */
@@ -41,8 +44,11 @@ export class Game {
   private readonly hud: Hud;
   private readonly overlay: ResultOverlay;
   private readonly levelSelect: LevelSelect;
+  private readonly editor: EditorMode;
 
   private levelIndex = 0;
+  /** The level from the editor being tried out, or null when a built-in level is being played. */
+  private playtestData: LevelData | null = null;
   private session: Session | null = null;
   /** Simulated seconds since the level started (frozen while paused). */
   private time = 0;
@@ -58,6 +64,7 @@ export class Game {
     viewport: HTMLElement,
     private readonly levels: readonly LevelData[],
     private readonly progress: Progress,
+    store: KeyValueStore | null = null,
   ) {
     this.renderer = new Renderer(canvas, viewport);
     this.input = new Input(canvas);
@@ -65,16 +72,27 @@ export class Game {
       onSelectTool: (id) => this.session?.tools.select(id),
       onAdjustRate: (delta) => this.session?.crowd.adjustReleaseRate(delta),
       onOpenLevels: () => this.openLevelSelect(),
+      onOpenEditor: () => this.toggleEditor(),
     });
     this.overlay = new ResultOverlay({
       onRetry: () => this.restart(),
       onNext: () => this.nextLevel(),
       onLevels: () => this.openLevelSelect(),
+      onEditor: () => this.openEditor(),
     });
     this.levelSelect = new LevelSelect({
       onChoose: (index) => this.chooseLevel(index),
       onClose: () => this.levelSelect.close(),
       onReset: () => this.resetProgress(),
+    });
+    this.editor = new EditorMode({
+      input: this.input,
+      renderer: this.renderer,
+      hud: this.hud,
+      levels,
+      store,
+      onPlaytest: (data) => this.playtest(data),
+      onExit: () => this.closeEditor(),
     });
     byId("hud-restart").addEventListener("click", () => this.restart());
     this.showGrid = progress.settings.showGrid;
@@ -84,10 +102,30 @@ export class Game {
     });
   }
 
-  /** Start (or restart) a level from its pristine map. */
+  /** Start (or restart) a built-in level from its pristine map. */
   loadLevel(index: number): void {
     this.levelIndex = index;
+    this.playtestData = null;
     const data = this.levels[index]!;
+    this.startSession(data);
+    this.hud.setMode("play");
+    this.hud.setLevelName(`${index + 1}. ${data.name}`);
+    this.progress.setLastLevel(data.name);
+    this.refreshProgress();
+  }
+
+  /** Try out a level from the editor. Nothing is recorded, and it replaces the attempt in progress. */
+  playtest(data: LevelData): void {
+    this.editor.leave();
+    this.playtestData = data;
+    this.startSession(data);
+    this.hud.setMode("playtest");
+    this.hud.setLevelName(`Playtest: ${data.name}`);
+    this.hud.setBest(null);
+  }
+
+  /** Build a fresh session from `data` and show it. */
+  private startSession(data: LevelData): void {
     const level = parseLevel(data);
     const crowd = new Crowd(level);
     this.session = {
@@ -96,14 +134,37 @@ export class Game {
       crowd,
       tools: new Toolbox(level),
       outcome: null,
+      result: null,
     };
     this.time = 0;
     this.renderer.setLevel(level);
-    this.hud.setLevelName(`${index + 1}. ${data.name}`);
-    this.progress.setLastLevel(data.name);
-    this.refreshProgress();
     this.overlay.hide();
     this.levelSelect.close();
+  }
+
+  /** Open the level editor, or leave it for the game. */
+  toggleEditor(): void {
+    if (this.editor.isOpen) this.closeEditor();
+    else this.openEditor();
+  }
+
+  openEditor(): void {
+    if (this.editor.isOpen) return;
+    this.levelSelect.close();
+    this.overlay.hide();
+    this.editor.enter();
+    this.hud.setMode("edit");
+  }
+
+  /** Back to the game. A playtest is dropped for the level it interrupted; anything else carries on as it was. */
+  closeEditor(): void {
+    if (!this.editor.isOpen) return;
+    this.editor.leave();
+    if (this.playtestData) return this.loadLevel(this.levelIndex);
+    this.hud.setMode("play");
+    if (!this.session) return;
+    this.renderer.setLevel(this.session.level);
+    if (this.session.result) this.overlay.show(this.session.result);
   }
 
   /** Load a level from the level select; locked levels can't be chosen. */
@@ -113,6 +174,7 @@ export class Game {
 
   /** Show the level select. The simulation is frozen while it's open. */
   openLevelSelect(): void {
+    this.closeEditor();
     const cards = this.levels.map((data, i) => ({
       name: data.name,
       lemmingCount: data.lemmingCount,
@@ -130,7 +192,8 @@ export class Game {
   }
 
   restart(): void {
-    this.loadLevel(this.levelIndex);
+    if (this.playtestData) this.playtest(this.playtestData);
+    else this.loadLevel(this.levelIndex);
   }
 
   /** Advance after a win; wraps back to the first level after the last. */
@@ -160,6 +223,8 @@ export class Game {
       saved: c?.saved,
       lost: c?.lost,
       outcome: this.session?.outcome,
+      mode: this.editor.isOpen ? "edit" : this.playtestData ? "playtest" : "play",
+      editor: this.editor.debug(),
       tools: this.session?.tools.charges,
       lemmings: c?.lemmings.map(
         (l) =>
@@ -174,6 +239,10 @@ export class Game {
 
   private update(dt: number): void {
     if (this.levelSelect.isOpen) return this.handleLevelSelectInput();
+    if (this.editor.isOpen) {
+      this.handleGridKey();
+      return this.editor.update();
+    }
     this.handleKeys();
     if (!this.session) return;
     this.handleReleaseRate(this.session, dt);
@@ -194,17 +263,21 @@ export class Game {
     const required = level.data.requiredToSave;
     session.outcome = crowd.saved >= required ? "won" : "lost";
     const won = session.outcome === "won";
-    const update = this.progress.record(level.data.name, { won, saved: crowd.saved, time: this.time });
-    this.refreshProgress();
-    this.overlay.show({
+    const playtest = this.playtestData !== null;
+    // A playtest isn't an attempt at a real level: its name may even clash with one.
+    const progress = playtest ? null : this.progress.record(level.data.name, { won, saved: crowd.saved, time: this.time });
+    if (!playtest) this.refreshProgress();
+    session.result = {
       won,
       saved: crowd.saved,
       required,
       total: crowd.total,
       hasNext: this.levels.length > 1,
       time: this.time,
-      progress: update,
-    });
+      playtest,
+      progress,
+    };
+    this.overlay.show(session.result);
   }
 
   /** While the level select is open, only Esc / L (close) count; everything else is dropped. */
@@ -225,14 +298,19 @@ export class Game {
     );
   }
 
+  private handleGridKey(): void {
+    if (!this.input.consumePress("KeyG")) return;
+    this.showGrid = !this.showGrid;
+    this.progress.updateSettings({ showGrid: this.showGrid });
+  }
+
   private handleKeys(): void {
-    if (this.input.consumePress("KeyG")) {
-      this.showGrid = !this.showGrid;
-      this.progress.updateSettings({ showGrid: this.showGrid });
-    }
+    this.handleGridKey();
     if (this.input.consumePress("KeyL")) return this.openLevelSelect();
+    if (this.input.consumePress("KeyE")) return this.openEditor();
+    if (this.playtestData && this.input.consumePress("Escape")) return this.openEditor();
     if (this.input.consumePress("KeyR")) return this.restart();
-    if (this.input.consumePress("KeyN") && this.session?.outcome === "won") return this.nextLevel();
+    if (this.input.consumePress("KeyN") && this.session?.outcome === "won" && !this.playtestData) return this.nextLevel();
     if (this.input.consumePress("KeyF")) {
       this.fast = !this.fast;
       this.hud.setFast(this.fast);
@@ -296,6 +374,7 @@ export class Game {
   }
 
   private render(): void {
+    if (this.editor.isOpen) return this.renderEditor();
     if (!this.session) return;
     const { level, crowd, tools } = this.session;
     const hoverTile = this.input.pointerTile();
@@ -315,6 +394,11 @@ export class Game {
     this.hud.setTools(tools.selected, tools.charges);
     this.hud.setStats({ out: crowd.active, saved: crowd.saved, need: level.data.requiredToSave, lost: crowd.lost });
     this.hud.setReleaseRate(crowd.releaseRate);
+    this.hud.setFps(this.loop.fps, performance.now());
+  }
+
+  private renderEditor(): void {
+    this.editor.render(performance.now() / 1000, this.showGrid);
     this.hud.setFps(this.loop.fps, performance.now());
   }
 }

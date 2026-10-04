@@ -34,7 +34,7 @@ export interface Level {
   spawn: TilePoint;
 }
 
-const SPAWN_CHAR = "S";
+export const SPAWN_CHAR = "S";
 
 export const LEGEND: Readonly<Record<string, TileType>> = {
   ".": TileType.Empty,
@@ -46,7 +46,15 @@ export const LEGEND: Readonly<Record<string, TileType>> = {
   [SPAWN_CHAR]: TileType.Empty,
 };
 
-export function parseLevel(data: LevelData): Level {
+/** The map character for each tile type (the inverse of LEGEND, spawn aside). */
+export const TILE_CHARS: Readonly<Record<TileType, string>> = Object.fromEntries(
+  Object.entries(LEGEND)
+    .filter(([ch]) => ch !== SPAWN_CHAR)
+    .map(([ch, tile]) => [tile, ch]),
+) as Record<TileType, string>;
+
+/** Parse the ASCII map into a grid and spawn point (null if there is no `S`). Throws on a malformed map. */
+export function parseMap(data: Pick<LevelData, "name" | "map">): { grid: Grid; spawn: TilePoint | null } {
   const { map } = data;
   const rows = map.length;
   const cols = map[0]?.length ?? 0;
@@ -67,7 +75,11 @@ export function parseLevel(data: LevelData): Level {
       grid.set(x, y, tile);
     }
   });
+  return { grid, spawn };
+}
 
+export function parseLevel(data: LevelData): Level {
+  const { grid, spawn } = parseMap(data);
   if (!spawn) throw new Error(`Level "${data.name}" has no spawn point ('${SPAWN_CHAR}')`);
   return { data, grid, spawn };
 }

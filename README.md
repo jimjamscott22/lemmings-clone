@@ -32,6 +32,7 @@ npm run build      # typecheck + production build
 | `N` | Next level (after a win) |
 | `G` | Toggle grid overlay |
 | `L` | Open the level select (`Esc` or `L` closes it) |
+| `E` | Open the level editor (`E` or `Esc` leaves it) |
 
 Each tool and skill has limited charges per level, shown in the toolbar.
 
@@ -40,6 +41,22 @@ Each tool and skill has limited charges per level, shown in the toolbar.
 The game opens on a level select screen. Levels unlock in order: the first is open, and solving a level unlocks the next. Each card shows whether the level is solved, your best saved count and fastest win, and how many attempts and wins you've had. The simulation is frozen while the level select is open.
 
 Progress is saved in your browser's `localStorage`: the per-level records, the level you last played (the level select starts with it highlighted, so `Enter` resumes it), and whether the grid overlay is on. The HUD shows how many levels you've solved and your best on the current level. The end-of-level panel calls out a first clear or a new best. **reset progress** on the level select clears it all and locks every level but the first.
+
+## Level editor
+
+Press `E` (or the **Editor** button) to build your own level. The game is frozen while you edit, and going back resumes the attempt you left.
+
+| Input | Action |
+| --- | --- |
+| `1`–`7` | Pick a brush: Empty, Dirt, Water, Wall, Bridge, Goal, or the spawn Hatch |
+| `B` / `F` | Pencil (drag to paint; fast drags leave no gaps) / Fill (click to flood-fill a connected area) |
+| `Ctrl`+`Z`, `Ctrl`+`Y` | Undo / redo map changes (`Cmd` on a Mac) |
+| `P` | Playtest the level: it runs like the real game, but nothing is saved |
+| `E` or `Esc` | Back to the game |
+
+Below the map you can resize it, name the level, and set the lemming count, save target, release rate, bricks, and tool and skill charges. **Start from…** copies a built-in level or a blank map. A level needs a name, a hatch and a goal, and a save target no bigger than the lemming count; the panel lists whatever is missing and keeps **Playtest** off until it's fixed.
+
+Your work is saved in the browser as you go, so it is still there after a reload. **Export / import** shows the level as code in the style of `levels.ts`. Paste it into the `LEVELS` array to add it to the game (then add a solvability test, see `levels.test.ts`), or edit it there and load it back. Plain map rows work for import too. Custom levels don't appear in the level select and never touch saved progress.
 
 ## Skills
 
@@ -79,7 +96,7 @@ A level ends when every lemming is saved or lost. You win if you saved at least 
 ```
 src/
 ├── config.ts             Tile size, timestep, and all physics/timing constants
-├── core/                 GameLoop (fixed 60 Hz timestep) and Game (sessions, input, outcome)
+├── core/                 GameLoop (fixed 60 Hz timestep), Game (sessions, input, outcome) and EditorMode
 ├── entities/             Lemming (data), Crowd (spawner + tally), World, and states/ (one file per FSM state)
 ├── tools/                Tool definitions, the combined tool + skill action list, and Toolbox (charges, drag strokes, skill assignment)
 ├── skills/               Skill definitions: who can take each skill and what it does
@@ -87,7 +104,8 @@ src/
 ├── render/               Canvas renderer, cached tile layer, tile and lemming pixel art
 ├── input/                Pointer and keyboard; drag samples are queued so fast strokes aren't missed
 ├── progress/             Saved progress (solved levels, bests, resume point, settings) over a pluggable key-value store
-└── ui/                   Tailwind HUD and the end-of-level overlay
+├── editor/               The level editor's DOM-free model: LevelDraft (painting, fill, resize, undo, export), level text parsing, draft storage
+└── ui/                   Tailwind HUD, the end-of-level overlay, level select and the editor panel
 ```
 
 - **States are stateless singletons.** Per-lemming data lives on `Lemming`. Transitions go through a name-keyed registry, so state modules never import each other.
