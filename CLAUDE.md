@@ -50,7 +50,7 @@ Before delegating to the current state, `Lemming.update` runs cross-cutting logi
 
 Levels are ASCII maps in `src/world/levels.ts` (legend: `.` empty, `#` dirt, `X` wall, `~` water, `=` bridge, `G` goal, `S` spawn; all rows must be the same length) plus `LevelData` parameters (counts, release rate, bricks, tool and skill charges).
 
-`src/world/levels.test.ts` proves each level is winnable by replaying a known solution with `play(index, strokes, cues)`: terrain strokes applied up front, then timed skill assignments via cues. When adding or changing a level, add or update its solvability test (and ideally a test that it is *not* winnable without help).
+`src/world/levels.test.ts` proves each level is winnable by replaying a known solution with `play(index, strokes, cues)`: terrain strokes applied up front, then timed skill assignments via cues. When adding or changing a level, add or update its solvability test (and ideally a test that it is *not* winnable without help). A level must be able to end: a lemming that can never leave (e.g. a non-climber pacing before a wall) stops the crowd from finishing, so give enough skills for everyone or let them die.
 
 Unit tests for states, skills and hazards use `src/test/sim.ts`: `setup(map)` builds a world from an ASCII map and places a lemming at `S`; `place` adds more lemmings; `run`/`runAll` step the simulation at the fixed timestep for N seconds or until a predicate holds.
 

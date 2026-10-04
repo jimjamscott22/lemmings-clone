@@ -43,12 +43,13 @@ export class Lemming {
   floater = false;
   /** Seconds until a bomber explodes, or null if it isn't one. */
   fuse: number | null = null;
-  /** Where the current fall started, for fall damage. Set when entering the falling state. */
-  fallStartY = 0;
+  /** Where the current fall started, for fall damage. Set when entering the falling state (and on spawn). */
+  fallStartY: number;
 
   constructor(x: number, y: number, bricks = 0) {
     this.x = x;
     this.y = y;
+    this.fallStartY = y;
     this.bricks = bricks;
   }
 
