@@ -48,6 +48,7 @@
             <p id="result-best" class="mt-1 text-xs text-stone-400"></p>
             <div class="mt-6 flex justify-center gap-3">
               <button id="result-editor" type="button" class="hidden rounded border border-lime-500 bg-lime-600/20 px-4 py-1.5 font-pixel text-sm text-lime-200 hover:bg-lime-600/40">Back to editor <kbd class="kbd">E</kbd></button>
+              <button id="result-copy" type="button" class="hidden rounded border border-lime-500 bg-lime-600/20 px-4 py-1.5 font-pixel text-sm text-lime-200 hover:bg-lime-600/40">Edit a copy</button>
               <button id="result-levels" type="button" class="rounded border border-stone-600 bg-stone-800 px-4 py-1.5 font-pixel text-sm text-stone-100 hover:bg-stone-700">Levels <kbd class="kbd">L</kbd></button>
               <button id="result-retry" type="button" class="rounded border border-stone-600 bg-stone-800 px-4 py-1.5 font-pixel text-sm text-stone-100 hover:bg-stone-700">Retry <kbd class="kbd">R</kbd></button>
               <button id="result-next" type="button" class="rounded border border-lime-500 bg-lime-600/20 px-4 py-1.5 font-pixel text-sm text-lime-200 hover:bg-lime-600/40">Next level <kbd class="kbd">N</kbd></button>
@@ -76,7 +77,7 @@
           </div>
           <p class="text-xs text-stone-400">
             This is the level as code. Paste it into the <code>LEVELS</code> array in <code>src/world/levels.ts</code> to add it to the game,
-            or edit / paste a level here and load it. Plain map rows work too.
+            or edit / paste a level here and load it. Plain map rows and share links work too.
           </p>
           <textarea id="editor-io-text" spellcheck="false" class="min-h-0 flex-1 resize-none rounded border border-stone-700 bg-stone-900 p-3 font-mono text-xs leading-tight text-stone-100 focus-visible:outline-2 focus-visible:outline-lime-400"></textarea>
           <div class="flex flex-wrap items-center gap-3">

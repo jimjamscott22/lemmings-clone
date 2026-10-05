@@ -53,10 +53,17 @@ Press `E` (or the **Editor** button) to build your own level. The game is frozen
 | `Ctrl`+`Z`, `Ctrl`+`Y` | Undo / redo map changes (`Cmd` on a Mac) |
 | `P` | Playtest the level: it runs like the real game, but nothing is saved |
 | `E` or `Esc` | Back to the game |
+| **Share** | Copy a link that opens the level in anyone's game |
 
 Below the map you can resize it, name the level, and set the lemming count, save target, release rate, bricks, and tool and skill charges. **Start from…** copies a built-in level or a blank map. A level needs a name, a hatch and a goal, and a save target no bigger than the lemming count; the panel lists whatever is missing and keeps **Playtest** off until it's fixed.
 
 Your work is saved in the browser as you go, so it is still there after a reload. **Export / import** shows the level as code in the style of `levels.ts`. Paste it into the `LEVELS` array to add it to the game (then add a solvability test, see `levels.test.ts`), or edit it there and load it back. Plain map rows work for import too. Custom levels don't appear in the level select and never touch saved progress.
+
+### Sharing a level
+
+**Share** (enabled once the level has a name, a hatch and a goal) copies a link like `https://…/#level=MXxUdXJu…`. The whole level is in the link, so there's no server: a typical level is a few hundred characters (the map is run-length encoded). Opening the link starts the level straight away under a **SHARED LEVEL** banner; like a playtest it saves nothing, `R` restarts it, and `L` goes back to the real levels. On its result panel, **Edit a copy** puts it in your editor (after asking, since it replaces your draft). A link pasted into **Export / import** loads the same way. If the clipboard is blocked, the link is shown in the export box to copy by hand.
+
+A link is just data from whoever made it, so it's checked before it's used: size limits on the link and on the map, unknown tiles and versions refused, numbers clamped, and a level without a hatch or goal rejected with a message.
 
 ## Skills
 
@@ -104,7 +111,7 @@ src/
 ├── render/               Canvas renderer, cached tile layer, tile and lemming pixel art
 ├── input/                Pointer and keyboard; drag samples are queued so fast strokes aren't missed
 ├── progress/             Saved progress (solved levels, bests, resume point, settings) over a pluggable key-value store
-├── editor/               The level editor's DOM-free model: LevelDraft (painting, fill, resize, undo, export), level text parsing, draft storage
+├── editor/               The level editor's DOM-free model: LevelDraft (painting, fill, resize, undo, export), level text parsing, draft storage, share links
 └── ui/                   Tailwind HUD, the end-of-level overlay, level select and the editor panel
 ```
 

@@ -16,8 +16,8 @@ export function byId<T extends HTMLElement>(id: string): T {
   return el as T;
 }
 
-/** What the player is doing: playing the game, building a level, or trying their level out. */
-export type HudMode = "play" | "edit" | "playtest";
+/** What the player is doing: playing the game, building a level, trying their level out, or playing a level from a link. */
+export type HudMode = "play" | "edit" | "playtest" | "shared";
 
 /** Show or hide an element that is `flex` when visible. */
 function setFlexVisible(el: HTMLElement, visible: boolean): void {
@@ -68,11 +68,11 @@ export class Hud {
     byId("hud-rate-up").addEventListener("click", () => handlers.onAdjustRate(1));
   }
 
-  /** The level editor replaces the play controls and stats; a playtest keeps them under a banner. */
+  /** The level editor replaces the play controls and stats; a playtest or shared level keeps them under a banner. */
   setMode(mode: HudMode): void {
     setFlexVisible(this.playStatsEl, mode !== "edit");
     setFlexVisible(this.footerEl, mode !== "edit");
-    this.modeEl.textContent = mode === "edit" ? "EDITOR" : mode === "playtest" ? "PLAYTEST" : "";
+    this.modeEl.textContent = { play: "", edit: "EDITOR", playtest: "PLAYTEST", shared: "SHARED LEVEL" }[mode];
     this.modeEl.classList.toggle("hidden", mode === "play");
   }
 
