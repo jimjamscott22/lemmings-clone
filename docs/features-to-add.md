@@ -41,10 +41,10 @@ Each one is one entry in `TileType.ts` plus a legend character:
 
 - ~~An in-browser level editor that paints tiles and exports the ASCII map.~~ Done: press `E`. Pencil and fill, undo, resize, level parameters, playtest, autosave, and export/import as `levels.ts` source (see `docs/plans/2026-10-04-level-editor.md`).
 - Replays: the simulation is DOM-free with a fixed timestep, so recording the inputs and the tick each one happened on gives deterministic replays almost for free.
-- Share a level as a URL by encoding the ASCII map in the hash.
+- ~~Share a level as a URL by encoding the ASCII map in the hash.~~ Done: **Share** in the editor copies a `#level=` link that opens the level in anyone's game (see `docs/plans/2026-10-05-share-by-url.md`).
 
 ## My Recommendation
 
 > Start with 5–8 more levels plus a level select screen, then add skills given to individual lemmings (Blocker and Basher first). More levels make the current mechanics worth playing, and skills are what make it feel like Lemmings rather than a sandbox. If you'd rather build the level editor first, it would make producing those levels much faster.
 
-**Status:** levels, level select, skills and the level editor are all done. Next up: new tiles and hazards (section 3), which give the levels new puzzles (the editor picks up new tile types from `LEGEND` on its own). A nuke (section 4) is also worth adding soon, so a level with stuck lemmings can end.
+**Status:** levels, level select, skills, the level editor and sharing by URL are all done. Next up: new tiles and hazards (section 3), which give the levels new puzzles (the editor picks up new tile types from `LEGEND` on its own). A nuke (section 4) is also worth adding soon, so a level with stuck lemmings can end.

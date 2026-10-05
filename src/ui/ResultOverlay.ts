@@ -10,9 +10,12 @@ export interface LevelResult {
   hasNext: boolean;
   /** Simulated seconds the attempt took. */
   time: number;
-  /** A trial run from the level editor: nothing is saved, and the way on is back to the editor. */
-  playtest: boolean;
-  /** What this attempt changed in the saved progress (null for a playtest). */
+  /**
+   * Set when this wasn't a real level: a playtest from the editor ("editor", the way on is back to
+   * it) or a level opened from a link ("link", which can be copied into the editor). Neither saves anything.
+   */
+  trial: "editor" | "link" | null;
+  /** What this attempt changed in the saved progress (null for a trial). */
   progress: RecordUpdate | null;
 }
 
@@ -26,11 +29,19 @@ export class ResultOverlay {
   private readonly next = byId<HTMLButtonElement>("result-next");
   private readonly levels = byId<HTMLButtonElement>("result-levels");
   private readonly editor = byId<HTMLButtonElement>("result-editor");
+  private readonly copy = byId<HTMLButtonElement>("result-copy");
 
-  constructor(handlers: { onRetry: () => void; onNext: () => void; onLevels: () => void; onEditor: () => void }) {
+  constructor(handlers: {
+    onRetry: () => void;
+    onNext: () => void;
+    onLevels: () => void;
+    onEditor: () => void;
+    onEditCopy: () => void;
+  }) {
     byId("result-retry").addEventListener("click", handlers.onRetry);
     this.levels.addEventListener("click", handlers.onLevels);
     this.editor.addEventListener("click", handlers.onEditor);
+    this.copy.addEventListener("click", handlers.onEditCopy);
     this.next.addEventListener("click", handlers.onNext);
   }
 
@@ -41,18 +52,19 @@ export class ResultOverlay {
     const pct = Math.round((r.saved / r.total) * 100);
     this.detail.textContent = `Saved ${r.saved} of ${r.total} (${pct}%) — needed ${r.required}, in ${formatTime(r.time)}.`;
 
-    this.levels.classList.toggle("hidden", r.playtest);
-    this.editor.classList.toggle("hidden", !r.playtest);
+    this.levels.classList.toggle("hidden", r.trial === "editor");
+    this.editor.classList.toggle("hidden", r.trial !== "editor");
+    this.copy.classList.toggle("hidden", r.trial !== "link");
     this.showProgress(r);
-    this.next.classList.toggle("hidden", r.playtest || !(r.won && r.hasNext));
+    this.next.classList.toggle("hidden", r.trial !== null || !(r.won && r.hasNext));
     this.root.classList.replace("hidden", "flex");
   }
 
-  /** "First clear!" and the personal best; a playtest has neither. */
+  /** "First clear!" and the personal best; a trial has neither. */
   private showProgress(r: LevelResult): void {
     if (!r.progress) {
       this.news.classList.add("hidden");
-      this.best.textContent = "Playtest: nothing is saved.";
+      this.best.textContent = `${r.trial === "link" ? "Shared level" : "Playtest"}: nothing is saved.`;
       return;
     }
     const { record, firstWin, newBestSaved, newFastestWin } = r.progress;

@@ -22,6 +22,8 @@ export interface EditorHandlers {
   onExit: () => void;
   /** Source text for the export box. */
   exportText: () => string;
+  /** A link that opens the level in anyone's game. */
+  shareLink: () => string;
   /** Load pasted text into the editor. Returns an error message, or null on success. */
   onImport: (text: string) => string | null;
 }
@@ -70,6 +72,8 @@ export class EditorPanel {
   private readonly redoButton = el("button", BUTTON_CLASS, "Redo");
   private readonly templates = el("select", `${INPUT_CLASS} w-40`);
   private readonly playtestButton = el("button", `${BUTTON_CLASS} border-lime-500 text-lime-200 hover:bg-lime-600/30`);
+  private readonly shareButton = el("button", BUTTON_CLASS, "Share");
+  private shareLabelTimer = 0;
   private readonly problemsEl = el("ul", "flex flex-wrap gap-x-4 gap-y-0.5");
   /** The number field just committed: shown again with its clamped value even while it has focus. */
   private edited: HTMLInputElement | null = null;
@@ -120,6 +124,8 @@ export class EditorPanel {
 
     const problems = draft.problems();
     this.playtestButton.disabled = problems.length > 0;
+    this.shareButton.disabled = problems.length > 0;
+    this.shareButton.title = problems.length ? "Fix the problems first" : "Copy a link that opens this level in anyone's game";
     this.playtestButton.title = problems.length ? "Fix the problems first" : "Try the level out (P)";
     const items = [
       ...problems.map((p) => ({ text: p, tone: "text-red-300" })),
@@ -138,9 +144,10 @@ export class EditorPanel {
     return !this.io.classList.contains("hidden");
   }
 
-  openIo(): void {
-    this.ioText.value = this.handlers.exportText();
-    this.ioStatus.textContent = "";
+  /** Show the export box, with `text` in it (the level's source unless told otherwise). */
+  openIo(text = this.handlers.exportText(), status = ""): void {
+    this.ioText.value = text;
+    this.ioStatus.textContent = status;
     this.io.classList.replace("hidden", "flex");
     this.ioText.focus();
     this.ioText.select();
@@ -175,6 +182,20 @@ export class EditorPanel {
       e.stopPropagation(); // closes the box only; the same press must not also leave the editor
       this.closeIo();
     });
+  }
+
+  /** Copy the share link; if the clipboard is out of reach, show it for the player to copy by hand. */
+  private async share(): Promise<void> {
+    const link = this.handlers.shareLink();
+    try {
+      await navigator.clipboard.writeText(link);
+    } catch {
+      this.openIo(link, "Couldn't reach the clipboard: this is the link, press Ctrl+C.");
+      return;
+    }
+    this.shareButton.textContent = "Link copied!";
+    clearTimeout(this.shareLabelTimer);
+    this.shareLabelTimer = window.setTimeout(() => (this.shareButton.textContent = "Share"), 1800);
   }
 
   /* Layout */
@@ -286,6 +307,9 @@ export class EditorPanel {
       if (value) this.handlers.onTemplate(value === "blank" ? null : Number(value));
     });
 
+    this.shareButton.type = "button";
+    this.shareButton.addEventListener("click", () => void this.share());
+
     const exportButton = el("button", BUTTON_CLASS, "Export / import");
     exportButton.type = "button";
     exportButton.title = "Copy the level as code for levels.ts, or load one back in";
@@ -301,7 +325,7 @@ export class EditorPanel {
     back.addEventListener("click", this.handlers.onExit);
 
     const actions = el("div", "flex flex-wrap items-center gap-1.5");
-    actions.append(select, exportButton, this.playtestButton, back);
+    actions.append(select, this.shareButton, exportButton, this.playtestButton, back);
     row.append(actions);
     return row;
   }

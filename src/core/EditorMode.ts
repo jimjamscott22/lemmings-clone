@@ -1,5 +1,6 @@
 import { loadDraft, saveDraft } from "../editor/draftStore";
 import { BRUSHES, LevelDraft, type Brush } from "../editor/LevelDraft";
+import { shareUrl } from "../editor/levelShare";
 import { parseLevelText } from "../editor/levelText";
 import type { Input } from "../input/Input";
 import type { KeyValueStore } from "../progress/Progress";
@@ -55,6 +56,7 @@ export class EditorMode {
         onPlaytest: () => this.playtest(),
         onExit: () => deps.onExit(),
         exportText: () => this.draft.toSource(),
+        shareLink: () => shareUrl(location.href, this.draft.toLevelData()),
         onImport: (text) => this.importText(text),
       },
       deps.levels.map((l) => l.name),
@@ -63,6 +65,11 @@ export class EditorMode {
 
   get isOpen(): boolean {
     return this.open;
+  }
+
+  /** Replace the draft with `data` (the map change can be undone) and show it. */
+  adopt(data: LevelData): void {
+    this.edit(() => this.draft.replaceWith(data), true);
   }
 
   /** The grid on screen, for the HUD's tile readout. */

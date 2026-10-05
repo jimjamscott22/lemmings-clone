@@ -1,15 +1,18 @@
 import { SKILL_ORDER, type SkillId } from "../skills/skills";
 import { TOOL_ORDER, type ToolId } from "../tools/tools";
 import type { LevelData } from "../world/Level";
+import { decodeLevel } from "./levelShare";
 
 /**
  * Turn the text an author pastes into a `LevelData`. Accepts what `LevelDraft.toSource` writes
- * (a TypeScript object literal as in `levels.ts`, trailing comma and all), plain JSON, or just the
- * map rows (quoted or not). Throws an Error with a message fit to show the author.
+ * (a TypeScript object literal as in `levels.ts`, trailing comma and all), plain JSON, just the
+ * map rows (quoted or not), or a share link. Throws an Error with a message fit to show the author.
  */
 export function parseLevelText(text: string): LevelData {
   const src = text.trim();
   if (!src) throw new Error("Nothing to import: paste a level first.");
+  const link = /^https?:\/\/\S*?#level=(\S*)$/.exec(src); // whatever follows is for decodeLevel to judge
+  if (link) return decodeLevel(link[1]!);
   if (src.startsWith("{")) {
     let raw: unknown;
     try {

@@ -47,8 +47,12 @@ export class Game {
   private readonly editor: EditorMode;
 
   private levelIndex = 0;
-  /** The level from the editor being tried out, or null when a built-in level is being played. */
+  /**
+   * The level being tried out instead of a built-in one, or null when a built-in level is being played.
+   * It is either the editor's draft (a playtest) or a level opened from a link; neither touches saved progress.
+   */
   private playtestData: LevelData | null = null;
+  private trial: "editor" | "link" = "editor";
   private session: Session | null = null;
   /** Simulated seconds since the level started (frozen while paused). */
   private time = 0;
@@ -79,6 +83,7 @@ export class Game {
       onNext: () => this.nextLevel(),
       onLevels: () => this.openLevelSelect(),
       onEditor: () => this.openEditor(),
+      onEditCopy: () => this.editSharedCopy(),
     });
     this.levelSelect = new LevelSelect({
       onChoose: (index) => this.chooseLevel(index),
@@ -115,13 +120,28 @@ export class Game {
   }
 
   /** Try out a level from the editor. Nothing is recorded, and it replaces the attempt in progress. */
-  playtest(data: LevelData): void {
+  playtest(data: LevelData, source: "editor" | "link" = "editor"): void {
     this.editor.leave();
     this.playtestData = data;
+    this.trial = source;
     this.startSession(data);
-    this.hud.setMode("playtest");
-    this.hud.setLevelName(`Playtest: ${data.name}`);
+    this.hud.setMode(source === "link" ? "shared" : "playtest");
+    this.hud.setLevelName(`${source === "link" ? "Shared" : "Playtest"}: ${data.name}`);
     this.hud.setBest(null);
+  }
+
+  /** Play a level that arrived in a link. Like a playtest, it saves nothing and replaces the current attempt. */
+  playShared(data: LevelData): void {
+    this.playtest(data, "link");
+  }
+
+  /** From a shared level's result panel: put a copy in the editor (after asking, since it replaces the draft). */
+  private editSharedCopy(): void {
+    const data = this.playtestData;
+    if (!data || this.trial !== "link") return;
+    if (!confirm("Replace the level in the editor with a copy of this one? Your current draft will be overwritten.")) return;
+    this.openEditor();
+    this.editor.adopt(data);
   }
 
   /** Build a fresh session from `data` and show it. */
@@ -156,11 +176,16 @@ export class Game {
     this.hud.setMode("edit");
   }
 
-  /** Back to the game. A playtest is dropped for the level it interrupted; anything else carries on as it was. */
+  /**
+   * Back to the game. A playtest is dropped for the level it interrupted, a shared level starts over,
+   * and anything else carries on as it was.
+   */
   closeEditor(): void {
     if (!this.editor.isOpen) return;
     this.editor.leave();
-    if (this.playtestData) return this.loadLevel(this.levelIndex);
+    if (this.playtestData) {
+      return this.trial === "link" ? this.playtest(this.playtestData, "link") : this.loadLevel(this.levelIndex);
+    }
     this.hud.setMode("play");
     if (!this.session) return;
     this.renderer.setLevel(this.session.level);
@@ -192,7 +217,7 @@ export class Game {
   }
 
   restart(): void {
-    if (this.playtestData) this.playtest(this.playtestData);
+    if (this.playtestData) this.playtest(this.playtestData, this.trial);
     else this.loadLevel(this.levelIndex);
   }
 
@@ -223,7 +248,7 @@ export class Game {
       saved: c?.saved,
       lost: c?.lost,
       outcome: this.session?.outcome,
-      mode: this.editor.isOpen ? "edit" : this.playtestData ? "playtest" : "play",
+      mode: this.editor.isOpen ? "edit" : this.playtestData ? (this.trial === "link" ? "shared" : "playtest") : "play",
       editor: this.editor.debug(),
       tools: this.session?.tools.charges,
       lemmings: c?.lemmings.map(
@@ -263,10 +288,10 @@ export class Game {
     const required = level.data.requiredToSave;
     session.outcome = crowd.saved >= required ? "won" : "lost";
     const won = session.outcome === "won";
-    const playtest = this.playtestData !== null;
-    // A playtest isn't an attempt at a real level: its name may even clash with one.
-    const progress = playtest ? null : this.progress.record(level.data.name, { won, saved: crowd.saved, time: this.time });
-    if (!playtest) this.refreshProgress();
+    const trial = this.playtestData ? this.trial : null;
+    // A trial isn't an attempt at a real level: its name may even clash with one.
+    const progress = trial ? null : this.progress.record(level.data.name, { won, saved: crowd.saved, time: this.time });
+    if (!trial) this.refreshProgress();
     session.result = {
       won,
       saved: crowd.saved,
@@ -274,7 +299,7 @@ export class Game {
       total: crowd.total,
       hasNext: this.levels.length > 1,
       time: this.time,
-      playtest,
+      trial,
       progress,
     };
     this.overlay.show(session.result);

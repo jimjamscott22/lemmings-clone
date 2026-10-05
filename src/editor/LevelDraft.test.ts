@@ -7,6 +7,7 @@ import { LEVELS } from "../world/levels";
 import { TileType } from "../world/TileType";
 import { DRAFT_KEY, loadDraft, saveDraft } from "./draftStore";
 import { LevelDraft } from "./LevelDraft";
+import { shareUrl } from "./levelShare";
 import { parseLevelText } from "./levelText";
 
 const rows = (d: LevelDraft) => d.toLevelData().map;
@@ -363,6 +364,13 @@ describe("parseLevelText", () => {
       skills: { climber: 1 },
       map: ["S..", "###"],
     });
+  });
+
+  it("reads a pasted share link", () => {
+    const link = shareUrl("https://example.com/lemmings/", FLAT);
+    expect(parseLevelText(link)).toEqual(FLAT);
+    expect(parseLevelText(`  ${link}\n`)).toEqual(FLAT);
+    expect(() => parseLevelText("https://example.com/#level=%%%")).toThrow();
   });
 
   it("explains what went wrong", () => {
