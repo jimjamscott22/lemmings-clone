@@ -16,6 +16,15 @@ export function byId<T extends HTMLElement>(id: string): T {
   return el as T;
 }
 
+/** What the player is doing: playing the game, building a level, or trying their level out. */
+export type HudMode = "play" | "edit" | "playtest";
+
+/** Show or hide an element that is `flex` when visible. */
+function setFlexVisible(el: HTMLElement, visible: boolean): void {
+  if (visible) el.classList.replace("hidden", "flex");
+  else el.classList.replace("flex", "hidden");
+}
+
 /** DOM overlay (Tailwind-styled). Writes to the DOM only when values change. */
 export class Hud {
   private readonly levelEl = byId("hud-level");
@@ -25,6 +34,9 @@ export class Hud {
   private readonly fpsEl = byId("hud-fps");
   private readonly pausedEl = byId("hud-paused");
   private readonly fastEl = byId("hud-fast");
+  private readonly modeEl = byId("hud-mode");
+  private readonly playStatsEl = byId("hud-play-stats");
+  private readonly footerEl = byId("play-footer");
   private readonly statEls = {
     out: byId("hud-out"),
     saved: byId("hud-saved"),
@@ -46,12 +58,22 @@ export class Hud {
     onSelectTool: (id: ActionId) => void;
     onAdjustRate: (delta: number) => void;
     onOpenLevels: () => void;
+    onOpenEditor: () => void;
   }) {
     this.buildLegend();
     this.buildToolbar(handlers.onSelectTool);
     byId("hud-levels").addEventListener("click", handlers.onOpenLevels);
+    byId("hud-editor").addEventListener("click", handlers.onOpenEditor);
     byId("hud-rate-down").addEventListener("click", () => handlers.onAdjustRate(-1));
     byId("hud-rate-up").addEventListener("click", () => handlers.onAdjustRate(1));
+  }
+
+  /** The level editor replaces the play controls and stats; a playtest keeps them under a banner. */
+  setMode(mode: HudMode): void {
+    setFlexVisible(this.playStatsEl, mode !== "edit");
+    setFlexVisible(this.footerEl, mode !== "edit");
+    this.modeEl.textContent = mode === "edit" ? "EDITOR" : mode === "playtest" ? "PLAYTEST" : "";
+    this.modeEl.classList.toggle("hidden", mode === "play");
   }
 
   setReleaseRate(rate: number): void {

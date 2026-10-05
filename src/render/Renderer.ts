@@ -1,9 +1,16 @@
 import { LEMMING_HALF_WIDTH, LEMMING_HEIGHT, TILE_SIZE } from "../config";
 import type { Lemming } from "../entities/Lemming";
-import type { Level, TilePoint } from "../world/Level";
+import type { Grid } from "../world/Grid";
+import type { TilePoint } from "../world/Level";
 import { drawLemming } from "./lemmingArt";
 import { PALETTE } from "./palette";
 import { TileLayer } from "./TileLayer";
+
+/** What the renderer shows: a level, or a level being edited (which may not have its hatch yet). */
+export interface Scene {
+  grid: Grid;
+  spawn: TilePoint | null;
+}
 
 export interface RenderState {
   /** Seconds of simulated time, for animations. */
@@ -36,16 +43,21 @@ export class Renderer {
     this.resizeObserver.observe(viewport);
   }
 
-  setLevel(level: Level): void {
+  setLevel(scene: Scene): void {
     this.tileLayer?.dispose();
-    const { grid } = level;
+    const { grid } = scene;
     this.canvas.width = grid.cols * TILE_SIZE;
     this.canvas.height = grid.rows * TILE_SIZE;
     this.ctx.imageSmoothingEnabled = false;
-    this.background = this.buildBackground(this.canvas.width, this.canvas.height);
-    this.drawSpawnHatch(this.background.getContext("2d")!, level.spawn);
+    this.setSpawn(scene.spawn);
     this.tileLayer = new TileLayer(grid);
     this.fitToViewport();
+  }
+
+  /** Redraw the backdrop with the hatch at a new spot (the level editor moves it). */
+  setSpawn(spawn: TilePoint | null): void {
+    this.background = this.buildBackground(this.canvas.width, this.canvas.height);
+    if (spawn) this.drawSpawnHatch(this.background.getContext("2d")!, spawn);
   }
 
   draw(state: RenderState): void {
