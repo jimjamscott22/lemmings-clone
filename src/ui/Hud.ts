@@ -50,6 +50,9 @@ export class Hud {
   private lastToolsKey = "";
   private readonly rateEl = byId("hud-rate");
   private lastRate = -1;
+  private readonly nukeEl = byId<HTMLButtonElement>("hud-nuke");
+  private readonly nukeLabelEl = byId("hud-nuke-label");
+  private lastNuke = "";
 
   private lastFpsUpdate = 0;
   private lastTileText = "";
@@ -57,6 +60,7 @@ export class Hud {
   constructor(handlers: {
     onSelectTool: (id: ActionId) => void;
     onAdjustRate: (delta: number) => void;
+    onNuke: () => void;
     onOpenLevels: () => void;
     onOpenEditor: () => void;
   }) {
@@ -66,6 +70,7 @@ export class Hud {
     byId("hud-editor").addEventListener("click", handlers.onOpenEditor);
     byId("hud-rate-down").addEventListener("click", () => handlers.onAdjustRate(-1));
     byId("hud-rate-up").addEventListener("click", () => handlers.onAdjustRate(1));
+    this.nukeEl.addEventListener("click", handlers.onNuke);
   }
 
   /** The level editor replaces the play controls and stats; a playtest or shared level keeps them under a banner. */
@@ -80,6 +85,17 @@ export class Hud {
     if (rate === this.lastRate) return;
     this.lastRate = rate;
     this.rateEl.textContent = String(rate);
+  }
+
+  /** The nuke button: ready, armed (waiting for the confirming press) or already fired. */
+  setNuke(state: "ready" | "armed" | "done"): void {
+    if (state === this.lastNuke) return;
+    this.lastNuke = state;
+    this.nukeLabelEl.textContent = { ready: "Nuke", armed: "Sure? Press again", done: "Nuked" }[state];
+    this.nukeEl.disabled = state === "done";
+    this.nukeEl.classList.toggle("border-red-400", state === "armed");
+    this.nukeEl.classList.toggle("text-red-200", state === "armed");
+    this.nukeEl.classList.toggle("opacity-50", state === "done");
   }
 
   /** Highlights the selected tool or skill and shows remaining charges. */

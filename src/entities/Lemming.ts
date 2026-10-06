@@ -1,4 +1,4 @@
-import { LEMMING_HALF_WIDTH, TILE_SIZE } from "../config";
+import { BOMB_FUSE, LEMMING_HALF_WIDTH, TILE_SIZE } from "../config";
 import type { Grid } from "../world/Grid";
 import { TileType } from "../world/TileType";
 import { blast } from "./blast";
@@ -91,6 +91,13 @@ export class Lemming {
     this.escapeTerrain(world);
     this.checkTriggers(world);
     this.state.update(this, world, dt);
+  }
+
+  /** Start the bomber countdown, unless one is already running or the lemming is already on its way out. */
+  lightFuse(): void {
+    if (this.done || this.fuse !== null) return;
+    if (this.state.name === "exiting" || this.state.name === "splatting") return;
+    this.fuse = BOMB_FUSE;
   }
 
   /** Count down a bomber's fuse; returns true if it went off. Reaching the exit defuses it. */

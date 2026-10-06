@@ -27,6 +27,7 @@ npm run build      # typecheck + production build
 | `3`–`8` | Select skill **Climber**, **Floater**, **Bomber**, **Blocker**, **Basher**, **Miner** |
 | `−` / `+` | Slow down / speed up the release rate (1–99; hold to change quickly, or use the HUD buttons) |
 | `Space` | Pause (you can still edit terrain, give skills and change the release rate while paused) |
+| `K` | Nuke: press twice (or use the HUD button) to blow up every lemming and end a hopeless run |
 | `F` | Fast-forward ×3 |
 | `R` | Restart the level |
 | `N` | Next level (after a win) |
@@ -79,6 +80,8 @@ Terrain tools are a global budget you spend on tiles. Skills are a second budget
 | **Miner** | Digs a staircase diagonally down and forward until it breaks through or hits a wall. |
 
 Falls of more than 9 tiles are fatal. If only blockers are left, the level ends and they count as lost.
+
+**Nuke** (`K`, pressed twice within 3 seconds) is for a run that has gone wrong: lemmings still in the hatch never come out and count as lost, and everyone in play gets the Bomber's 5-second fuse. Anyone who reaches the exit before it burns down is still saved, so a level you've already won on can finish early. It can't be undone, and a restart (`R`) is the way back.
 
 ## How lemmings behave
 

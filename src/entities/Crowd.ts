@@ -28,6 +28,8 @@ export class Crowd {
   released = 0;
   saved = 0;
   lost = 0;
+  /** The player has pulled the plug: nobody else is released and everyone in play is about to explode. */
+  nuked = false;
   private rate: number;
   /**
    * Seconds since the last release. Measured up rather than counted down, so a rate change
@@ -60,6 +62,19 @@ export class Crowd {
   /** Every lemming has been released and none are still in play. */
   get finished(): boolean {
     return this.released === this.total && this.lemmings.length === 0;
+  }
+
+  /**
+   * End a hopeless run, as in the original: lemmings still in the hatch never come out (they count as
+   * lost) and everyone in play gets a bomber fuse. Anyone who reaches the exit before it burns down is
+   * still saved. Does nothing a second time.
+   */
+  nuke(): void {
+    if (this.nuked) return;
+    this.nuked = true;
+    this.lost += this.total - this.released;
+    this.released = this.total;
+    for (const l of this.lemmings) l.lightFuse();
   }
 
   update(world: World, dt: number): void {

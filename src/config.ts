@@ -65,8 +65,10 @@ export const CLIMB_SPEED = 14;
 /** A floater opens its umbrella after falling this far, then drifts down at FLOAT_SPEED. */
 export const FLOATER_OPEN_HEIGHT = TILE_SIZE;
 export const FLOAT_SPEED = 40;
-/** Seconds from giving the Bomber skill to the explosion. */
+/** Seconds from giving the Bomber skill to the explosion. A nuke lights this fuse on everyone. */
 export const BOMB_FUSE = 5;
+/** Seconds the Nuke button stays armed after the first press, waiting for the confirming press. */
+export const NUKE_CONFIRM_TIME = 3;
 /** Diggable tiles whose centre is within this many pixels of the bomber are blown away. */
 export const BOMB_RADIUS = 1.5 * TILE_SIZE;
 /** A walker heading toward a blocker turns around once their centres are this close. */
