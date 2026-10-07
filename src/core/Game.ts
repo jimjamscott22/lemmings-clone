@@ -5,6 +5,7 @@ import { Input } from "../input/Input";
 import type { KeyValueStore, Progress } from "../progress/Progress";
 import { Renderer } from "../render/Renderer";
 import { ACTION_ORDER, actionInfo } from "../tools/actions";
+import { NukeSwitch } from "../tools/NukeSwitch";
 import { Toolbox } from "../tools/Toolbox";
 import { byId, Hud } from "../ui/Hud";
 import { LevelSelect } from "../ui/LevelSelect";
@@ -19,6 +20,7 @@ interface Session {
   readonly world: World;
   readonly crowd: Crowd;
   readonly tools: Toolbox;
+  readonly nuke: NukeSwitch;
   /** Set once every lemming is accounted for; the simulation stops. */
   outcome: "won" | "lost" | null;
   /** What the result panel showed, to bring it back after a visit to the level editor. */
@@ -75,6 +77,7 @@ export class Game {
     this.hud = new Hud({
       onSelectTool: (id) => this.session?.tools.select(id),
       onAdjustRate: (delta) => this.session?.crowd.adjustReleaseRate(delta),
+      onNuke: () => this.pressNuke(),
       onOpenLevels: () => this.openLevelSelect(),
       onOpenEditor: () => this.toggleEditor(),
     });
@@ -153,6 +156,7 @@ export class Game {
       world: { grid: level.grid, lemmings: crowd.lemmings },
       crowd,
       tools: new Toolbox(level),
+      nuke: new NukeSwitch(),
       outcome: null,
       result: null,
     };
@@ -245,6 +249,7 @@ export class Game {
     return {
       time: +this.time.toFixed(2),
       released: c?.released,
+      nuked: c?.nuked,
       saved: c?.saved,
       lost: c?.lost,
       outcome: this.session?.outcome,
@@ -270,6 +275,7 @@ export class Game {
     }
     this.handleKeys();
     if (!this.session) return;
+    this.session.nuke.update(dt);
     this.handleReleaseRate(this.session, dt);
     this.handleTools(this.session);
     if (this.session.outcome || this.paused) return;
@@ -335,6 +341,7 @@ export class Game {
     if (this.input.consumePress("KeyE")) return this.openEditor();
     if (this.playtestData && this.input.consumePress("Escape")) return this.openEditor();
     if (this.input.consumePress("KeyR")) return this.restart();
+    if (this.input.consumePress("KeyK")) this.pressNuke();
     if (this.input.consumePress("KeyN") && this.session?.outcome === "won" && !this.playtestData) return this.nextLevel();
     if (this.input.consumePress("KeyF")) {
       this.fast = !this.fast;
@@ -347,6 +354,13 @@ export class Game {
     for (const id of ACTION_ORDER) {
       if (this.input.consumePress(actionInfo(id).key)) this.session?.tools.select(id);
     }
+  }
+
+  /** The first press arms the nuke and the next one fires it. Ignored once the level is over or already nuked. */
+  private pressNuke(): void {
+    const session = this.session;
+    if (!session || session.outcome || this.levelSelect.isOpen || session.crowd.nuked) return;
+    if (session.nuke.press()) session.crowd.nuke();
   }
 
   /**
@@ -419,6 +433,7 @@ export class Game {
     this.hud.setTools(tools.selected, tools.charges);
     this.hud.setStats({ out: crowd.active, saved: crowd.saved, need: level.data.requiredToSave, lost: crowd.lost });
     this.hud.setReleaseRate(crowd.releaseRate);
+    this.hud.setNuke(crowd.nuked ? "done" : this.session.nuke.armed ? "armed" : "ready");
     this.hud.setFps(this.loop.fps, performance.now());
   }
 

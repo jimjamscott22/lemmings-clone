@@ -31,7 +31,7 @@ In dev, `window.game` and `window.progress` are exposed; `game.debug()` returns 
 
 Before delegating to the current state, `Lemming.update` runs cross-cutting logic in order: bomber fuse countdown (`blast.ts`), escaping terrain that appeared inside the body (or being crushed), and tile triggers (Goal → `exiting`, Water → `swimming`).
 
-**Crowd.** `Crowd` spawns lemmings from the hatch according to the release rate, updates them, removes finished ones, and keeps `saved`/`lost` tallies. A level is `finished` when all are released and none remain; if only blockers remain they are retired as lost. `World` (`{ grid, lemmings }`) is what states see; lemmings need the full list so walkers can detect blockers.
+**Crowd.** `Crowd` spawns lemmings from the hatch according to the release rate, updates them, removes finished ones, and keeps `saved`/`lost` tallies. A level is `finished` when all are released and none remain; if only blockers remain they are retired as lost. `Crowd.nuke()` (the player's Nuke, `K` twice, confirmed by `tools/NukeSwitch.ts`) marks the hatch empty (unreleased lemmings count as lost) and calls `Lemming.lightFuse()` on everyone in play, so they go off like bombers; anyone who reaches the exit first is still saved. `World` (`{ grid, lemmings }`) is what states see; lemmings need the full list so walkers can detect blockers.
 
 **Two player budgets.**
 - *Terrain tools* (`tools/tools.ts`: dig, build) are applied to tiles via drag strokes; `Toolbox.stroke` fills gaps between pointer samples with Bresenham (`tilesOnLine`).
@@ -54,7 +54,7 @@ Before delegating to the current state, `Lemming.update` runs cross-cutting logi
 
 Levels are ASCII maps in `src/world/levels.ts` (legend: `.` empty, `#` dirt, `X` wall, `~` water, `=` bridge, `G` goal, `S` spawn; all rows must be the same length) plus `LevelData` parameters (counts, release rate, bricks, tool and skill charges).
 
-`src/world/levels.test.ts` proves each level is winnable by replaying a known solution with `play(index, strokes, cues)`: terrain strokes applied up front, then timed skill assignments via cues. When adding or changing a level, add or update its solvability test (and ideally a test that it is *not* winnable without help). A level must be able to end: a lemming that can never leave (e.g. a non-climber pacing before a wall) stops the crowd from finishing, so give enough skills for everyone or let them die.
+`src/world/levels.test.ts` proves each level is winnable by replaying a known solution with `play(index, strokes, cues)`: terrain strokes applied up front, then timed skill assignments via cues. When adding or changing a level, add or update its solvability test (and ideally a test that it is *not* winnable without help). Prefer levels that can end on their own: a lemming that can never leave (e.g. a non-climber pacing before a wall) stops the crowd from finishing, so give enough skills for everyone or let them die. The player's escape hatch is the nuke, but it shouldn't be needed to finish a level you've solved.
 
 Unit tests for states, skills and hazards use `src/test/sim.ts`: `setup(map)` builds a world from an ASCII map and places a lemming at `S`; `place` adds more lemmings; `run`/`runAll` step the simulation at the fixed timestep for N seconds or until a predicate holds.
 

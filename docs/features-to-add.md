@@ -34,7 +34,7 @@ Each one is one entry in `TileType.ts` plus a legend character:
 - Sound effects with the Web Audio API: the hatch opening, digging, a splash, a "yippee" at the exit.
 - Particles for dirt debris, splashes, and a burst at the exit.
 - A release-rate control (`+`/`-` to speed up or slow down spawning), as in the original.
-- **Nuke:** Blow up all lemmings to end a hopeless run.
+- ~~**Nuke:** Blow up all lemmings to end a hopeless run.~~ Done: press `K` twice (or the HUD button). See `docs/plans/2026-10-06-nuke.md`.
 - Camera scroll and zoom for levels bigger than the screen.
 
 ## 5. Tooling
@@ -47,4 +47,4 @@ Each one is one entry in `TileType.ts` plus a legend character:
 
 > Start with 5–8 more levels plus a level select screen, then add skills given to individual lemmings (Blocker and Basher first). More levels make the current mechanics worth playing, and skills are what make it feel like Lemmings rather than a sandbox. If you'd rather build the level editor first, it would make producing those levels much faster.
 
-**Status:** levels, level select, skills, the level editor and sharing by URL are all done. Next up: new tiles and hazards (section 3), which give the levels new puzzles (the editor picks up new tile types from `LEGEND` on its own). A nuke (section 4) is also worth adding soon, so a level with stuck lemmings can end.
+**Status:** levels, level select, skills, the level editor and sharing by URL are all done. Next up: new tiles and hazards (section 3), which give the levels new puzzles (the editor picks up new tile types from `LEGEND` on its own). The nuke is in, so a level with stuck lemmings can now be ended.
