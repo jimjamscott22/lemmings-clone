@@ -18,8 +18,15 @@ interface TestGame {
 
 function mountDom(): void {
   const raw = readFileSync(resolve(import.meta.dirname, "../../index.html"), "utf8");
-  const body = raw.match(/<body[^>]*>([\s\S]*)<\/body>/i)?.[1] ?? "";
-  document.body.innerHTML = body.replace(/<script[\s\S]*?<\/script>/gi, "");
+  const parsed = new DOMParser().parseFromString(raw, "text/html");
+  document.body.replaceChildren();
+  for (const node of parsed.body.childNodes) {
+    if (node.nodeName === "SCRIPT") continue;
+    document.body.appendChild(node.cloneNode(true));
+  }
+  for (const script of document.body.querySelectorAll("script")) {
+    script.remove();
+  }
 }
 
 function pressKey(code: string): void {
