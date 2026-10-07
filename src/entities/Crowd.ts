@@ -115,7 +115,9 @@ export class Crowd {
   private retireStrandedBlockers(): void {
     if (this.released < this.total || this.lemmings.length === 0) return;
     if (!this.lemmings.every((l) => l.done || l.state.name === "blocking")) return;
-    for (const l of this.lemmings) if (!l.done) l.retire("lost");
+    for (const l of this.lemmings) {
+      if (!l.done && l.fuse === null) l.retire("lost");
+    }
   }
 
   private spawn(): void {

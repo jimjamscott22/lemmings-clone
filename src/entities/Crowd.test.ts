@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { BOMB_FUSE, FIXED_TIMESTEP, RELEASE_RATE_DEFAULT, RELEASE_RATE_MAX, RELEASE_RATE_MIN, SPAWN_INTERVAL } from "../config";
 import { parseLevel, type LevelData } from "../world/Level";
 import { LEVELS } from "../world/levels";
+import { TileType } from "../world/TileType";
 import { Crowd, releaseInterval } from "./Crowd";
 
 /** A long sealed floor so nobody is saved or lost during the test. */
@@ -19,7 +20,7 @@ function makeCrowd(data: Partial<LevelData> = {}) {
   const runFor = (seconds: number) => {
     for (let i = 0; i < Math.round(seconds / FIXED_TIMESTEP); i++) crowd.update(world, FIXED_TIMESTEP);
   };
-  return { crowd, runFor };
+  return { crowd, runFor, world, level };
 }
 
 describe("release rate", () => {
@@ -134,5 +135,24 @@ describe("nuke", () => {
     crowd.nuke();
     expect(crowd.finished).toBe(true);
     expect(crowd.lost).toBe(5);
+  });
+
+  it("still detonates fused blockers when lemmings remain in the hatch", () => {
+    const { crowd, runFor, world, level } = makeCrowd({ lemmingCount: 10, releaseRate: RELEASE_RATE_MIN });
+    runFor(0.15);
+    const blocker = crowd.lemmings[0]!;
+    blocker.setState("blocking", world);
+    const blastCol = blocker.col;
+    const blastRow = blocker.bodyRow;
+    level.grid.set(blastCol, blastRow, TileType.Dirt);
+
+    crowd.nuke();
+    crowd.update(world, FIXED_TIMESTEP);
+    expect(blocker.fuse).toBeGreaterThan(0);
+    expect(blocker.done).toBe(false);
+
+    runFor(BOMB_FUSE + 0.5);
+    expect(level.grid.get(blastCol, blastRow)).toBe(TileType.Empty);
+    expect(crowd.finished).toBe(true);
   });
 });
