@@ -268,6 +268,7 @@ export class Game {
   }
 
   private update(dt: number): void {
+    this.session?.nuke.update(dt);
     if (this.levelSelect.isOpen) return this.handleLevelSelectInput();
     if (this.editor.isOpen) {
       this.handleGridKey();
@@ -275,7 +276,6 @@ export class Game {
     }
     this.handleKeys();
     if (!this.session) return;
-    this.session.nuke.update(dt);
     this.handleReleaseRate(this.session, dt);
     this.handleTools(this.session);
     if (this.session.outcome || this.paused) return;
