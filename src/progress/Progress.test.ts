@@ -34,6 +34,7 @@ describe("Progress", () => {
     expect(p.isSolved("One")).toBe(false);
     expect(p.solvedCount(NAMES)).toBe(0);
     expect(p.settings.showGrid).toBe(false);
+    expect(p.settings.soundEnabled).toBe(true);
   });
 
   it("records a loss without solving the level", () => {
@@ -79,13 +80,14 @@ describe("Progress", () => {
     const a = new Progress(store);
     a.record("Two", { won: true, saved: 8, time: 30 });
     a.setLastLevel("Two");
-    a.updateSettings({ showGrid: true });
+    a.updateSettings({ showGrid: true, soundEnabled: false });
 
     const b = new Progress(store);
     expect(b.isSolved("Two")).toBe(true);
     expect(b.get("Two").bestSaved).toBe(8);
     expect(b.resumeIndex(NAMES)).toBe(1);
     expect(b.settings.showGrid).toBe(true);
+    expect(b.settings.soundEnabled).toBe(false);
   });
 
   it("resumes at the last level played, else the first unsolved, else the first", () => {
@@ -133,9 +135,11 @@ describe("Progress", () => {
     const store = memoryStore();
     const p = new Progress(store);
     p.record("One", { won: true, saved: 5, time: 1 });
+    p.updateSettings({ soundEnabled: false });
     p.reset();
     expect(p.isSolved("One")).toBe(false);
     expect(store.items.has(STORAGE_KEY)).toBe(false);
+    expect(p.settings.soundEnabled).toBe(true);
   });
 
   it("falls back to a fresh start on corrupt, foreign-version or malformed data", () => {
@@ -150,7 +154,7 @@ describe("Progress", () => {
           version: 1,
           levels: { One: { attempts: "lots", wins: 2, bestSaved: -4, fastestWin: "fast" }, Two: null },
           lastLevel: 7,
-          settings: { showGrid: "yes" },
+          settings: { showGrid: "yes", soundEnabled: "yes" },
         }),
       }),
     );
@@ -158,6 +162,16 @@ describe("Progress", () => {
     expect(p.get("Two").wins).toBe(0);
     expect(p.resumeIndex(NAMES)).toBe(1);
     expect(p.settings.showGrid).toBe(false);
+    expect(p.settings.soundEnabled).toBe(true);
+  });
+
+  it("loads old saves without losing scores or grid settings when sound settings are absent", () => {
+    const store = memoryStore({ [STORAGE_KEY]: JSON.stringify({
+      version: 1, levels: { One: { attempts: 2, wins: 1, bestSaved: 8 } }, settings: { showGrid: true },
+    }) });
+    const p = new Progress(store);
+    expect(p.get("One")).toMatchObject({ attempts: 2, wins: 1, bestSaved: 8 });
+    expect(p.settings).toEqual({ showGrid: true, soundEnabled: true });
   });
 
   it("keeps working in memory when storage throws or is unavailable", () => {

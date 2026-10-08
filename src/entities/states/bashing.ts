@@ -26,6 +26,7 @@ export const bashing: LemmingState = {
     if (l.stateTime < BASH_TIME) return;
 
     grid.set(col, row, TileType.Empty);
+    world.onEvent?.("dig");
     l.stateTime = 0;
     if (!grid.isDiggable(col + l.dir, row)) l.setState("walking", world);
   },

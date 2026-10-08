@@ -1,4 +1,5 @@
 import { RELEASE_RATE_HOLD_SPEED } from "../config";
+import { GameAudio } from "../audio/GameAudio";
 import { Crowd } from "../entities/Crowd";
 import type { World } from "../entities/World";
 import { Input } from "../input/Input";
@@ -8,6 +9,7 @@ import { ACTION_ORDER, actionInfo } from "../tools/actions";
 import { NukeSwitch } from "../tools/NukeSwitch";
 import { Toolbox } from "../tools/Toolbox";
 import { byId, Hud } from "../ui/Hud";
+import { HelpGuide } from "../ui/HelpGuide";
 import { LevelSelect } from "../ui/LevelSelect";
 import { ResultOverlay, type LevelResult } from "../ui/ResultOverlay";
 import { parseLevel, type Level, type LevelData } from "../world/Level";
@@ -47,6 +49,8 @@ export class Game {
   private readonly overlay: ResultOverlay;
   private readonly levelSelect: LevelSelect;
   private readonly editor: EditorMode;
+  private readonly help: HelpGuide;
+  private readonly audio: GameAudio;
 
   private levelIndex = 0;
   /**
@@ -72,8 +76,19 @@ export class Game {
     private readonly progress: Progress,
     store: KeyValueStore | null = null,
   ) {
+    this.audio = new GameAudio(progress.settings.soundEnabled);
+    this.refreshSoundButton();
+    byId("hud-sound").addEventListener("click", () => {
+      const enabled = !this.progress.settings.soundEnabled;
+      this.progress.updateSettings({ soundEnabled: enabled });
+      this.audio.setEnabled(enabled);
+      this.refreshSoundButton();
+    });
     this.renderer = new Renderer(canvas, viewport);
     this.input = new Input(canvas);
+    this.help = new HelpGuide(() => this.clearGuideInput());
+    byId("hud-help").addEventListener("click", () => this.openHelp());
+    byId("levels-help").addEventListener("click", () => this.openHelp());
     this.hud = new Hud({
       onSelectTool: (id) => this.session?.tools.select(id),
       onAdjustRate: (delta) => this.session?.crowd.adjustReleaseRate(delta),
@@ -149,11 +164,13 @@ export class Game {
 
   /** Build a fresh session from `data` and show it. */
   private startSession(data: LevelData): void {
+    this.audio.stop();
+    this.help.close();
     const level = parseLevel(data);
     const crowd = new Crowd(level);
     this.session = {
       level,
-      world: { grid: level.grid, lemmings: crowd.lemmings },
+      world: { grid: level.grid, lemmings: crowd.lemmings, onEvent: (event) => this.audio.play(event) },
       crowd,
       tools: new Toolbox(level),
       nuke: new NukeSwitch(),
@@ -174,6 +191,7 @@ export class Game {
 
   openEditor(): void {
     if (this.editor.isOpen) return;
+    this.audio.stop();
     this.levelSelect.close();
     this.overlay.hide();
     this.editor.enter();
@@ -203,6 +221,7 @@ export class Game {
 
   /** Show the level select. The simulation is frozen while it's open. */
   openLevelSelect(): void {
+    this.audio.stop();
     this.closeEditor();
     const cards = this.levels.map((data, i) => ({
       name: data.name,
@@ -234,6 +253,8 @@ export class Game {
   resetProgress(): void {
     if (!confirm("Forget which levels you've solved and all your best scores?")) return;
     this.progress.reset();
+    this.audio.setEnabled(this.progress.settings.soundEnabled);
+    this.refreshSoundButton();
     this.showGrid = false;
     this.loadLevel(0);
     this.openLevelSelect();
@@ -243,11 +264,39 @@ export class Game {
     this.loop.start();
   }
 
+  /** Freeze without changing pause, editor, result, or level select state. */
+  private openHelp(): void {
+    this.audio.stop();
+    this.clearGuideInput();
+    this.help.open();
+  }
+
+  private clearGuideInput(): void {
+    this.input.clearPresses();
+    this.input.consumeStroke();
+    this.input.consumeClicks();
+    this.session?.tools.endStroke();
+    this.rateHeldFor = 0;
+    this.rateCarry = 0;
+  }
+
+  private refreshSoundButton(): void {
+    const enabled = this.progress.settings.soundEnabled;
+    const button = byId("hud-sound");
+    button.textContent = enabled ? "Sound on" : "Sound off";
+    button.setAttribute("aria-pressed", String(enabled));
+    button.setAttribute("aria-label", enabled ? "Sound effects enabled; click to mute" : "Sound effects muted; click to enable");
+  }
+
   /** Snapshot for the dev console and automated checks. */
   debug(): object {
     const c = this.session?.crowd;
     return {
       time: +this.time.toFixed(2),
+      paused: this.paused,
+      helpOpen: this.help.isOpen,
+      levelsOpen: this.levelSelect.isOpen,
+      audio: this.audio.debug(),
       released: c?.released,
       nuked: c?.nuked,
       saved: c?.saved,
@@ -269,12 +318,21 @@ export class Game {
 
   private update(dt: number): void {
     this.session?.nuke.update(dt);
+    if (this.help.isOpen) {
+      this.clearGuideInput();
+      return;
+    }
+    if (this.input.consumePress("KeyH")) {
+      this.openHelp();
+      return;
+    }
     if (this.levelSelect.isOpen) return this.handleLevelSelectInput();
     if (this.editor.isOpen) {
       this.handleGridKey();
       return this.editor.update();
     }
     this.handleKeys();
+    if (this.levelSelect.isOpen || this.editor.isOpen) return;
     if (!this.session) return;
     this.handleReleaseRate(this.session, dt);
     this.handleTools(this.session);
@@ -349,6 +407,7 @@ export class Game {
     }
     if (this.input.consumePress("Space")) {
       this.paused = !this.paused;
+      if (this.paused) this.audio.stop();
       this.hud.setPaused(this.paused);
     }
     for (const id of ACTION_ORDER) {
@@ -407,8 +466,10 @@ export class Game {
       return;
     }
     for (const tile of strokes) {
-      if (tile) tools.stroke(tile);
-      else tools.endStroke();
+      if (tile) {
+        const changed = tools.stroke(tile);
+        if (changed > 0 && tools.selected === "dig" && !this.paused) this.audio.play("dig");
+      } else tools.endStroke();
     }
   }
 

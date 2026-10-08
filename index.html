@@ -20,7 +20,11 @@
           <button id="hud-editor" type="button" title="Build your own level" class="flex items-baseline gap-1.5 rounded border border-stone-700 bg-stone-900 px-2 py-0.5 hover:bg-stone-800">
             <kbd class="kbd">E</kbd> Editor
           </button>
+          <button id="hud-help" type="button" aria-haspopup="dialog" aria-controls="help" class="flex items-baseline gap-1.5 rounded border border-stone-700 bg-stone-900 px-2 py-0.5 hover:bg-stone-800">
+            <kbd class="kbd">H</kbd> How to play
+          </button>
           <span id="hud-mode" class="hidden font-pixel text-amber-300"></span>
+          <button id="hud-sound" type="button" aria-pressed="true" aria-label="Sound effects enabled; click to mute" class="rounded border border-stone-700 bg-stone-900 px-2 py-0.5 hover:bg-stone-800">Sound on</button>
           <div id="hud-play-stats" class="flex flex-wrap items-baseline gap-x-5 gap-y-1">
             <span id="hud-progress" class="tabular-nums" title="Levels won at least once"></span>
             <span id="hud-best" class="tabular-nums" title="Your best on this level"></span>
@@ -65,6 +69,10 @@
               <button id="levels-reset" type="button" class="hover:text-red-300">reset progress</button>
               <button id="levels-close" type="button" class="hover:text-stone-200"><kbd class="kbd">Esc</kbd> back to game</button>
             </div>
+          </div>
+          <div class="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-lime-900 bg-lime-950/30 px-4 py-3">
+            <p class="text-sm text-stone-300">New here? Learn the tools, meet the lemmings, and plan your first rescue.</p>
+            <button id="levels-help" type="button" aria-haspopup="dialog" aria-controls="help" class="shrink-0 rounded border border-lime-500 bg-lime-600/20 px-4 py-2 font-pixel text-sm text-lime-200 hover:bg-lime-600/40">How to play <kbd class="kbd">H</kbd></button>
           </div>
           <ol id="levels-grid" class="mt-5 grid grid-cols-[repeat(auto-fill,minmax(14rem,1fr))] gap-3"></ol>
         </div>
@@ -117,6 +125,27 @@
         </div>
       </footer>
     </div>
+    <dialog id="help" class="help-guide" aria-labelledby="help-title" aria-describedby="help-description">
+      <div class="help-layout">
+        <header class="help-header">
+          <div>
+            <h2 id="help-title" class="font-pixel text-xl text-lime-300">How to play</h2>
+            <p id="help-description" class="mt-1 text-xs text-stone-400">A field guide to your next rescue. Gameplay is frozen while you read.</p>
+          </div>
+          <button id="help-close" type="button" class="shrink-0 rounded border border-stone-600 bg-stone-800 px-3 py-2 text-xs text-stone-100 hover:bg-stone-700">Close <kbd class="kbd">Esc</kbd></button>
+        </header>
+        <nav class="help-nav" aria-label="Guide sections">
+          <a href="#guide-start">Start here</a>
+          <a href="#guide-behavior">Behavior</a>
+          <a href="#guide-tools">Terrain tools</a>
+          <a href="#guide-skills">Skills</a>
+          <a href="#guide-hazards">Hazards & tactics</a>
+          <a href="#guide-controls">Controls</a>
+          <a href="#guide-extras">Editor & progress</a>
+        </nav>
+        <div id="help-content" class="help-content" tabindex="0" aria-label="Game guide"></div>
+      </div>
+    </dialog>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

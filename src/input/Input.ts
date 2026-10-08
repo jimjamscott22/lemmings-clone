@@ -67,6 +67,8 @@ export class Input {
     window.addEventListener(
       "keydown",
       (e) => {
+        // Native modal keyboard input belongs to its links, buttons, and scrollable content.
+        if (e.target instanceof Element && e.target.closest("dialog[open]")) return;
         if (e.repeat || isTextEntry(e.target)) return; // typing in a form field isn't a game key
         if (e.code === "Space") e.preventDefault(); // don't scroll the page
         // The browser's own undo would reach back into a form field edited earlier (and refocus it).
