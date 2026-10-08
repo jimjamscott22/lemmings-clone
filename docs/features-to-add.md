@@ -31,7 +31,7 @@ Each one is one entry in `TileType.ts` plus a legend character:
 
 ## 4. Game Feel
 
-- Sound effects with the Web Audio API: the hatch opening, digging, a splash, a "yippee" at the exit.
+- ~~Sound effects with the Web Audio API: the hatch opening, digging, a splash, a "yippee" at the exit.~~ Done: synthesized hatch, digging, and splash effects; a high-pitched browser-spoken “Yippie!” with a celebratory chirp fallback; and a saved Sound on/off toggle.
 - Particles for dirt debris, splashes, and a burst at the exit.
 - A release-rate control (`+`/`-` to speed up or slow down spawning), as in the original.
 - ~~**Nuke:** Blow up all lemmings to end a hopeless run.~~ Done: press `K` twice (or the HUD button). See `docs/plans/2026-10-06-nuke.md`.

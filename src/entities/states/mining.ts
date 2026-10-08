@@ -20,7 +20,13 @@ export const mining: LemmingState = {
     const row = l.bodyRow;
     if (isHard(grid, col, row) || isHard(grid, col, row + 1)) return l.setState("walking", world);
 
-    for (const r of [row, row + 1]) if (grid.isDiggable(col, r)) grid.set(col, r, TileType.Empty);
+    let cleared = false;
+    for (const r of [row, row + 1]) {
+      if (!grid.isDiggable(col, r)) continue;
+      grid.set(col, r, TileType.Empty);
+      cleared = true;
+    }
+    if (cleared) world.onEvent?.("dig");
     l.x = col * TILE_SIZE + TILE_SIZE / 2;
     l.y += TILE_SIZE;
     l.stateTime = 0;

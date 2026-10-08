@@ -50,4 +50,4 @@ window.addEventListener("hashchange", () => {
 });
 
 // Dev-only handle for poking at state from the browser console.
-if (import.meta.env.DEV) Object.assign(window, { game, progress });
+if (import.meta.env.DEV) Object.assign(window, { game, progress, render_game_to_text: () => JSON.stringify(game.debug()) });

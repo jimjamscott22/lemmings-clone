@@ -82,6 +82,8 @@ export class Lemming {
     this.state = STATES[name];
     this.stateTime = 0;
     this.state.enter?.(this, world);
+    if (name === "swimming") world.onEvent?.("splash");
+    else if (name === "exiting") world.onEvent?.("exit");
   }
 
   update(world: World, dt: number): void {

@@ -81,6 +81,7 @@ export class Crowd {
     this.sinceSpawn += dt;
     if (this.released < this.total && this.sinceSpawn >= releaseInterval(this.rate)) {
       this.spawn();
+      if (this.released === 1) world.onEvent?.("hatch");
       this.sinceSpawn = 0;
     }
 

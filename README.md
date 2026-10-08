@@ -34,14 +34,27 @@ npm run build      # typecheck + production build
 | `G` | Toggle grid overlay |
 | `L` | Open the level select (`Esc` or `L` closes it) |
 | `E` | Open the level editor (`E` or `Esc` leaves it) |
+| `H` | Open the How to play guide (`Esc` or Close returns to the previous screen) |
 
 Each tool and skill has limited charges per level, shown in the toolbar.
+
+## In-game guide
+
+Choose **How to play** on the opening level select screen or in the top bar, or press `H` from the game, level select, or editor. The scrollable guide explains automatic lemming behavior, terrain tools, all six skills with assignment rules and practical examples, hazards, tactics, controls, progress, and the editor. Section links let you jump straight to a topic.
+
+Gameplay freezes while the guide is open and its keyboard focus stays inside the panel. Closing it returns to the same screen and preserves your pause state.
+
+## Sound
+
+The hatch opening, successful digging (including the Dig tool, Basher, and Miner), and entering water play short Web Audio effects. Reaching the goal triggers a high-pitched spoken **“Yippie!”** using an available English browser speech voice, with a two-note celebration as the fallback when no voice is available or speech fails. Voices vary by browser.
+
+Sound starts after a click or key press. **Sound on / off** in the top bar mutes all output and saves the preference in this browser. Pausing, opening the guide, level select or editor, restarting, and hiding the tab stop active sounds. No sounds are queued for later, and crowd effects are limited to avoid excessive overlap during fast-forward. Old progress saves default to sound enabled.
 
 ## Progress
 
 The game opens on a level select screen. Levels unlock in order: the first is open, and solving a level unlocks the next. Each card shows whether the level is solved, your best saved count and fastest win, and how many attempts and wins you've had. The simulation is frozen while the level select is open.
 
-Progress is saved in your browser's `localStorage`: the per-level records, the level you last played (the level select starts with it highlighted, so `Enter` resumes it), and whether the grid overlay is on. The HUD shows how many levels you've solved and your best on the current level. The end-of-level panel calls out a first clear or a new best. **reset progress** on the level select clears it all and locks every level but the first.
+Progress is saved in your browser's `localStorage`: the per-level records, the level you last played (the level select starts with it highlighted, so `Enter` resumes it), and your grid overlay and sound preferences. The HUD shows how many levels you've solved and your best on the current level. The end-of-level panel calls out a first clear or a new best. **reset progress** on the level select clears it all and locks every level but the first.
 
 ## Level editor
 
@@ -75,7 +88,7 @@ Terrain tools are a global budget you spend on tiles. Skills are a second budget
 | **Climber** | Permanent. Climbs walls instead of turning around; lets go and falls back under an overhang. |
 | **Floater** | Permanent. Opens an umbrella and survives any fall (but not the void). |
 | **Bomber** | Counts down 5 seconds, then explodes, blasting diggable terrain within 1.5 tiles. Reaching the exit defuses it. |
-| **Blocker** | Stands still for good and turns other walkers around. Bomb it to free its spot. |
+| **Blocker** | Stands still and turns other walkers around. Remove its support to make it fall and resume moving, or bomb it to free its spot. |
 | **Basher** | Tunnels horizontally through dirt and bridge, including one-tile steps a walker would jump. |
 | **Miner** | Digs a staircase diagonally down and forward until it breaks through or hits a wall. |
 

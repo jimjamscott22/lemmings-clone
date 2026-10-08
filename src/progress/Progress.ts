@@ -20,6 +20,7 @@ export interface LevelRecord {
 
 export interface Settings {
   showGrid: boolean;
+  soundEnabled: boolean;
 }
 
 /** The outcome of a finished attempt, as recorded. */
@@ -51,7 +52,7 @@ export const STORAGE_KEY = "lemmings-clone:progress";
 const VERSION = 1;
 
 const emptyRecord = (): LevelRecord => ({ attempts: 0, wins: 0, bestSaved: 0, fastestWin: null, firstWonAt: null });
-const emptyData = (): SaveData => ({ version: VERSION, levels: {}, lastLevel: null, settings: { showGrid: false } });
+const emptyData = (): SaveData => ({ version: VERSION, levels: {}, lastLevel: null, settings: { showGrid: false, soundEnabled: true } });
 
 /**
  * Persistent player progress: which levels are solved, personal bests, the level to resume,
@@ -197,6 +198,9 @@ function sanitize(parsed: unknown): SaveData {
   if (typeof parsed.lastLevel === "string") data.lastLevel = parsed.lastLevel;
   if (isObject(parsed.settings) && typeof parsed.settings.showGrid === "boolean") {
     data.settings.showGrid = parsed.settings.showGrid;
+  }
+  if (isObject(parsed.settings) && typeof parsed.settings.soundEnabled === "boolean") {
+    data.settings.soundEnabled = parsed.settings.soundEnabled;
   }
   return data;
 }

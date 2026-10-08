@@ -16,6 +16,7 @@ export const digging: LemmingState = {
 
     if (l.stateTime >= DIG_TIME) {
       grid.set(col, l.bodyRow, TileType.Empty);
+      world.onEvent?.("dig");
       l.setState("walking", world);
     }
   },
