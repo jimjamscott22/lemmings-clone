@@ -56,6 +56,22 @@ The game opens on a level select screen. Levels unlock in order: the first is op
 
 Progress is saved in your browser's `localStorage`: the per-level records, the level you last played (the level select starts with it highlighted, so `Enter` resumes it), and your grid overlay and sound preferences. The HUD shows how many levels you've solved and your best on the current level. The end-of-level panel calls out a first clear or a new best. **reset progress** on the level select clears it all and locks every level but the first.
 
+## Difficulty ramp
+
+The first three levels stay untimed so you can learn the tools and skills. Levels 4–8 introduce deadlines, higher save targets, and tighter budgets:
+
+| Level | Time limit | Save target | Tool and skill budget |
+| --- | --- | --- | --- |
+| 4. Turn Back | 1:30 | 8/10 | 1 Blocker |
+| 5. Parachute Drop | 1:15 | 6/8 | 7 Build, 6 Floaters |
+| 6. Over the Wall | 1:05 | 6/6 | 4 Build, 6 Climbers |
+| 7. Down the Mine | 0:55 | 9/10 | 1 Miner |
+| 8. Grand Tour | 1:00 | 8/8 | 1 Dig, 7 Build, 8 Climbers, 1 Basher |
+
+The final level has a longer route, but less spare time. Every built-in level has a tested solution within its deadline at the default release rate.
+
+The HUD shows the countdown and a **Hurry!** warning for the last ten seconds. It follows simulation time: pause, the guide, level select, and editor freeze it; fast-forward runs it at ×3. At zero, the attempt ends and the result screen explains the timeout. Restart gives you the full time allowance again. Existing campaign progress is preserved.
+
 ## Level editor
 
 Press `E` (or the **Editor** button) to build your own level. The game is frozen while you edit, and going back resumes the attempt you left.
@@ -69,13 +85,15 @@ Press `E` (or the **Editor** button) to build your own level. The game is frozen
 | `E` or `Esc` | Back to the game |
 | **Share** | Copy a link that opens the level in anyone's game |
 
-Below the map you can resize it, name the level, and set the lemming count, save target, release rate, bricks, and tool and skill charges. **Start from…** copies a built-in level or a blank map. A level needs a name, a hatch and a goal, and a save target no bigger than the lemming count; the panel lists whatever is missing and keeps **Playtest** off until it's fixed.
+Below the map you can resize it, name the level, and set the lemming count, save target, time limit in seconds (0 means untimed, up to 3600), release rate, bricks, and tool and skill charges. **Start from…** copies a built-in level or a blank map. A level needs a name, a hatch and a goal, and a save target no bigger than the lemming count; the panel lists whatever is missing and keeps **Playtest** off until it's fixed.
 
 Your work is saved in the browser as you go, so it is still there after a reload. **Export / import** shows the level as code in the style of `levels.ts`. Paste it into the `LEVELS` array to add it to the game (then add a solvability test, see `levels.test.ts`), or edit it there and load it back. Plain map rows work for import too. Custom levels don't appear in the level select and never touch saved progress.
 
 ### Sharing a level
 
 **Share** (enabled once the level has a name, a hatch and a goal) copies a link like `https://…/#level=MXxUdXJu…`. The whole level is in the link, so there's no server: a typical level is a few hundred characters (the map is run-length encoded). Opening the link starts the level straight away under a **SHARED LEVEL** banner; like a playtest it saves nothing, `R` restarts it, and `L` goes back to the real levels. On its result panel, **Edit a copy** puts it in your editor (after asking, since it replaces your draft). A link pasted into **Export / import** loads the same way. If the clipboard is blocked, the link is shown in the export box to copy by hand.
+
+Untimed links keep the original format. Timed links use version 2 so older clients reject them instead of silently removing the deadline; the current game reads both versions.
 
 A link is just data from whoever made it, so it's checked before it's used: size limits on the link and on the map, unknown tiles and versions refused, numbers clamped, and a level without a hatch or goal rejected with a message.
 
@@ -112,7 +130,7 @@ Each lemming runs a finite state machine (`src/entities/states/`):
 | **Splatting** | Landed from more than 9 tiles up without an umbrella, so it's lost. |
 | **Climbing**, **Blocking**, **Bashing**, **Mining** | Jobs given by skills (see above). Walkers also climb instead of turning if they're climbers. |
 
-A level ends when every lemming is saved or lost. You win if you saved at least the required number.
+A level ends when every lemming is saved or lost, or its time limit expires. You win if you saved at least the required number. At the deadline, lemmings already entering the exit count as saved; all others, including those still in the hatch, count as lost.
 
 ## Architecture
 

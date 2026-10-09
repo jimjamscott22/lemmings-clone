@@ -77,6 +77,16 @@ export class Crowd {
     for (const l of this.lemmings) l.lightFuse();
   }
 
+  /** End at the deadline. Reaching the goal counts even if its exit animation is still playing. */
+  expire(): void {
+    this.lost += this.total - this.released;
+    this.released = this.total;
+    for (const l of this.lemmings) {
+      if (!l.done) l.retire(l.state.name === "exiting" ? "saved" : "lost");
+    }
+    this.removeFinished();
+  }
+
   update(world: World, dt: number): void {
     this.sinceSpawn += dt;
     if (this.released < this.total && this.sinceSpawn >= releaseInterval(this.rate)) {

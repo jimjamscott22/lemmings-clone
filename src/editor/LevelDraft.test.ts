@@ -427,3 +427,37 @@ describe("draft storage", () => {
     expect(() => saveDraft(hostile, FLAT)).not.toThrow();
   });
 });
+
+describe("time limits", () => {
+  it("survives source, JSON and draft storage round trips", () => {
+    const data = { ...FLAT, timeLimit: 75 };
+    const draft = new LevelDraft(data);
+    expect(parseLevelText(draft.toSource())).toEqual(data);
+    expect(parseLevelText(JSON.stringify(data))).toEqual(data);
+    const saved = new Map<string, string>();
+    const store = {
+      getItem: (key: string) => saved.get(key) ?? null,
+      setItem: (key: string, value: string) => { saved.set(key, value); },
+      removeItem: (key: string) => { saved.delete(key); },
+    };
+    saveDraft(store, draft.toLevelData());
+    expect(loadDraft(store)).toEqual(data);
+  });
+
+  it("defaults old drafts to untimed and normalizes imported limits", () => {
+    const draft = new LevelDraft(FLAT);
+    expect(draft.getNumber("timeLimit")).toBe(0);
+    expect(draft.toLevelData().timeLimit).toBeUndefined();
+    draft.setNumber("timeLimit", 75.4);
+    expect(draft.toLevelData().timeLimit).toBe(75);
+    draft.setNumber("timeLimit", Infinity);
+    expect(draft.toLevelData().timeLimit).toBe(75);
+    draft.setNumber("timeLimit", 9000);
+    expect(draft.toLevelData().timeLimit).toBe(3600);
+    draft.setNumber("timeLimit", -10);
+    expect(draft.toLevelData().timeLimit).toBeUndefined();
+    draft.setNumber("timeLimit", 60);
+    draft.replaceWith(FLAT);
+    expect(draft.getNumber("timeLimit")).toBe(0);
+  });
+});

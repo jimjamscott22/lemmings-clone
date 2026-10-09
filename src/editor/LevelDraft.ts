@@ -16,7 +16,7 @@ export function brushName(brush: Brush): string {
 }
 
 /** A numeric LevelData parameter the editor exposes: level settings, then tool and skill charges. */
-export type FieldId = "lemmingCount" | "requiredToSave" | "releaseRate" | "bricks" | ActionId;
+export type FieldId = "lemmingCount" | "requiredToSave" | "timeLimit" | "releaseRate" | "bricks" | ActionId;
 
 export interface DraftField {
   id: FieldId;
@@ -34,6 +34,7 @@ const MAX_COUNT = 99;
 export const DRAFT_FIELDS: readonly DraftField[] = [
   { id: "lemmingCount", label: "Lemmings", hint: "Total released from the hatch", min: 1, max: MAX_COUNT },
   { id: "requiredToSave", label: "Save", hint: "Lemmings that must reach the goal to win", min: 1, max: MAX_COUNT },
+  { id: "timeLimit", label: "Time (s, 0 = off)", hint: "Simulation seconds allowed; 0 means no time limit", min: 0, max: 3600 },
   { id: "releaseRate", label: "Rate", hint: "Starting release rate", min: RELEASE_RATE_MIN, max: RELEASE_RATE_MAX },
   { id: "bricks", label: "Bricks", hint: "Bridge blocks each lemming carries", min: 0, max: MAX_COUNT },
   ...ACTION_ORDER.map((id): DraftField => {
@@ -53,6 +54,7 @@ const FIELD_BY_ID = new Map(DRAFT_FIELDS.map((f) => [f.id, f]));
 const DEFAULT_NUMBERS = (): Record<FieldId, number> => ({
   lemmingCount: 10,
   requiredToSave: 5,
+  timeLimit: 0,
   releaseRate: RELEASE_RATE_DEFAULT,
   bricks: 0,
   ...(Object.fromEntries(ACTION_ORDER.map((id) => [id, 0])) as Record<ActionId, number>),
@@ -264,6 +266,7 @@ export class LevelDraft {
       map: this.snapshot(),
     };
     if (n.releaseRate !== RELEASE_RATE_DEFAULT) data.releaseRate = n.releaseRate;
+    if (n.timeLimit > 0) data.timeLimit = n.timeLimit;
     if (n.bricks > 0) data.bricks = n.bricks;
     const charges = (skills: boolean) =>
       Object.fromEntries(ACTION_ORDER.filter((id) => isSkill(id) === skills && n[id] > 0).map((id) => [id, n[id]]));
@@ -285,6 +288,7 @@ export class LevelDraft {
       `    requiredToSave: ${d.requiredToSave},`,
     ];
     if (d.releaseRate !== undefined) lines.push(`    releaseRate: ${d.releaseRate},`);
+    if (d.timeLimit !== undefined) lines.push(`    timeLimit: ${d.timeLimit},`);
     if (d.bricks !== undefined) lines.push(`    bricks: ${d.bricks},`);
     if (d.tools) lines.push(`    tools: ${inline(d.tools)},`);
     if (d.skills) lines.push(`    skills: ${inline(d.skills)},`);
@@ -337,6 +341,7 @@ export class LevelDraft {
     Object.assign(n, {
       lemmingCount: data.lemmingCount,
       requiredToSave: data.requiredToSave,
+      timeLimit: data.timeLimit ?? 0,
       releaseRate: data.releaseRate ?? RELEASE_RATE_DEFAULT,
       bricks: data.bricks ?? 0,
     });

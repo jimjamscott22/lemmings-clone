@@ -6,6 +6,7 @@ export interface LevelCard {
   name: string;
   lemmingCount: number;
   requiredToSave: number;
+  timeLimit?: number;
   unlocked: boolean;
   record: LevelRecord;
 }
@@ -87,7 +88,10 @@ export class LevelSelect {
       attempts.textContent = `${record.wins} won of ${record.attempts} attempt${record.attempts === 1 ? "" : "s"}`;
     }
 
-    button.append(head, status, attempts);
+    const deadline = document.createElement("span");
+    deadline.className = "text-xs text-stone-400";
+    deadline.textContent = card.timeLimit ? `Time limit ${formatTime(card.timeLimit)}` : "Untimed";
+    button.append(head, status, deadline, attempts);
     return button;
   }
 }

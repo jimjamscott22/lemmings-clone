@@ -30,7 +30,8 @@ function play(index: number, strokes: Array<[ToolId, [number, number], [number, 
   const crowd = new Crowd(level);
   const world = { grid: level.grid, lemmings: crowd.lemmings };
   const pending = [...cues];
-  for (let i = 0; i < 300 / FIXED_TIMESTEP && !crowd.finished; i++) {
+  const deadline = level.data.timeLimit ?? 300;
+  for (let i = 0; i < Math.floor(deadline / FIXED_TIMESTEP) && !crowd.finished; i++) {
     const cue = pending[0];
     if (cue) {
       tools.select(cue.skill);
@@ -196,7 +197,7 @@ describe("levels", () => {
     const atBarricade = (l: Lemming) => l.state.name === "walking" && l.bodyRow === 10 && l.col >= 15 && l.col <= 22 && l.dir === 1;
     const climbers = times(8, { skill: "climber", when: beforeWall });
 
-    it("is lost with the dig tool alone (two charges can't tunnel the barricade)", () => {
+    it("is lost with the dig tool alone (one charge can't tunnel the barricade)", () => {
       const { crowd, required } = play(7, [...pool, ["dig", [24, 10], [26, 10]]], climbers);
       expect(crowd.saved).toBeLessThan(required);
     });

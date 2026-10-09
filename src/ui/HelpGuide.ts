@@ -65,7 +65,7 @@ function guideContent(): string {
         <li><strong>Make a safe route.</strong> Select a terrain tool and drag across tiles, or select a skill and click one lemming. A green outline identifies a lemming that can take the selected skill.</li>
         <li><strong>Resume and watch the first lemming.</strong> Slow the release rate while preparing the route. Speed it up once the path is safe, and use <kbd>F</kbd> for ×3 fast-forward.</li>
       </ol>
-      <p>The level finishes when every lemming is saved or lost, including those still waiting in the hatch. Meeting the target wins; you do not need to save everyone. There is no countdown deadline.</p>
+      <p>The level finishes when every lemming is saved or lost, or its time limit expires. Meeting the target wins; you do not need to save everyone. Levels 1–3 are untimed. Later levels have a countdown shown on the level card and beside <strong>Time</strong> in the HUD. At zero, anyone who has not reached the exit counts as lost; meeting the save target still wins. Lemmings already in their exit animation count as saved. Pause, the guide, level select, and the editor freeze the countdown; ×3 fast-forward speeds it up. Restart resets it.</p>
     </section>
 
     <section id="guide-behavior" aria-labelledby="guide-behavior-title">
@@ -161,7 +161,7 @@ function guideContent(): string {
       <h3 id="guide-extras-title">Progress, editor, and sharing</h3>
       <p>Built-in levels unlock in order. Winning unlocks the next level; cards show your best saved count, fastest win, and completed attempts. Progress, the last played level, and your grid and sound preferences are saved in this browser. Reset progress on level select clears those records and preferences and locks all but the first level.</p>
       <p>Press <kbd>E</kbd> or click Editor to create a level. The current game is frozen while editing. Choose brushes with <kbd>1</kbd>–<kbd>7</kbd>: Empty, Dirt, Water, Wall, Bridge, Goal, and Hatch. Use <kbd>B</kbd> for the drag pencil or <kbd>F</kbd> for flood fill, and <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Z</kbd> / <kbd>Y</kbd> for undo / redo.</p>
-      <p>The editor lets you set the map size, name, lemming count, save target, release rate, personal bricks, and each tool or skill budget. A playable level needs a name, hatch, goal, and a valid save target; the editor lists any problems.</p>
+      <p>The editor lets you set the map size, name, lemming count, save target, time limit in seconds (0 means untimed), release rate, personal bricks, and each tool or skill budget. A playable level needs a name, hatch, goal, and a valid save target; the editor lists any problems.</p>
       <p>Press <kbd>P</kbd> to playtest a valid draft. Playtesting replaces the active attempt, but never records built-in progress. Use <kbd>E</kbd> or <kbd>Esc</kbd> to return to the editor. Your draft is saved automatically in this browser.</p>
       <p>Share copies a link containing the whole custom level. Someone opening it can play immediately without affecting built-in progress. On its result screen, Edit a copy loads it into the editor after confirming replacement of the current draft. Export / import can also copy or load level text and share links.</p>
     </section>`;
