@@ -344,13 +344,15 @@ export class Game {
     for (let i = 0; i < steps; i++) {
       const remaining = this.timeRemaining;
       const step = remaining === null ? dt : Math.min(dt, remaining);
-      const timedOut = remaining !== null && remaining - step < 1e-9;
       this.time += step;
       this.session.crowd.update(this.session.world, step);
-      if (timedOut) {
+      const atDeadline = remaining !== null && remaining - step < 1e-9;
+      let timedOut = false;
+      if (atDeadline && !this.session.crowd.finished) {
         this.time = this.session.level.data.timeLimit!;
         this.session.crowd.expire();
         this.audio.stop();
+        timedOut = true;
       }
       this.checkOutcome(this.session, timedOut);
       if (this.session.outcome) break;

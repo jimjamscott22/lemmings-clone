@@ -55,10 +55,21 @@ describe("level deadlines", () => {
     internal.render();
   }
 
-  beforeEach(() => {
+  function mountDom(): void {
     const raw = readFileSync(resolve(import.meta.dirname, "../../index.html"), "utf8");
-    const body = /<body[^>]*>([\s\S]*)<\/body>/.exec(raw)![1]!;
-    document.body.innerHTML = body.replace(/<script\b[^>]*>[\s\S]*?<\/script>/g, "");
+    const parsed = new DOMParser().parseFromString(raw, "text/html");
+    document.body.replaceChildren();
+    for (const node of parsed.body.childNodes) {
+      if (node.nodeName === "SCRIPT") continue;
+      document.body.appendChild(node.cloneNode(true));
+    }
+    for (const script of document.body.querySelectorAll("script")) {
+      script.remove();
+    }
+  }
+
+  beforeEach(() => {
+    mountDom();
     vi.stubGlobal("Option", function Option(text: string, value: string) {
       const option = document.createElement("option");
       option.text = text;
@@ -160,6 +171,16 @@ describe("level deadlines", () => {
     expect(internal.session.outcome).toBe("won");
     expect(document.getElementById("result-detail")!.textContent).not.toContain("Time ran out");
     expect(progress.get(LEVEL.name).fastestWin).toBeLessThan(60);
+  });
+
+  it("does not mark a natural win on the final tick as a timeout", () => {
+    mount({ ...LEVEL, lemmingCount: 1, requiredToSave: 1, timeLimit: 1 });
+    ticks(59);
+    internal.session.crowd.lemmings[0]!.retire("saved");
+    ticks(1);
+    expect(game.debug()).toMatchObject({ outcome: "won", time: 1 });
+    expect(document.getElementById("result-title")!.textContent).toBe("Level complete!");
+    expect(document.getElementById("result-detail")!.textContent).not.toContain("Time ran out");
   });
 
   it("shows deadlines on level cards and a configurable timer in the editor", () => {
