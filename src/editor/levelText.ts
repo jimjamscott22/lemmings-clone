@@ -57,6 +57,7 @@ export function coerceLevelData(raw: unknown): LevelData {
     map: map as string[],
   };
   if (typeof r.releaseRate === "number") data.releaseRate = r.releaseRate;
+  if (typeof r.timeLimit === "number" && Number.isFinite(r.timeLimit)) data.timeLimit = r.timeLimit;
   if (typeof r.bricks === "number") data.bricks = r.bricks;
   const tools = counts(r.tools, TOOL_ORDER);
   if (tools) data.tools = tools;

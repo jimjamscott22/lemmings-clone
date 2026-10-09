@@ -133,3 +133,26 @@ describe("a hostile or damaged link is refused, not expanded", () => {
     expect(new LevelDraft(data).problems()).toEqual([]);
   });
 });
+
+describe("timed level link compatibility", () => {
+  const decodedText = (data: LevelData) => atob(encodeLevel(data).replace(/-/g, "+").replace(/_/g, "/"));
+
+  it("uses version 2 for timed levels so older clients cannot silently omit the timer", () => {
+    const timed = { ...FLAT, timeLimit: 90 };
+    expect(decodedText(timed)).toMatch(/^2\|/);
+    expect(decodeLevel(encodeLevel(timed))).toEqual(timed);
+    expect(decodedText(FLAT)).toMatch(/^1\|/);
+  });
+
+  it("keeps legacy links untimed", () => {
+    const legacy = payload("Legacy", "lemmingCount:3,requiredToSave:1", ".S......G./10X");
+    expect(decodeLevel(legacy)).toMatchObject({ name: "Legacy", lemmingCount: 3, requiredToSave: 1 });
+    expect(decodeLevel(legacy).timeLimit).toBeUndefined();
+  });
+
+  it("normalizes unsafe timer values", () => {
+    for (const [value, expected] of [["-1", undefined], ["Infinity", undefined], ["oops", undefined], ["999999", 3600]] as const) {
+      expect(decodeLevel(payload("Timer", `timeLimit:${value}`, ".S......G./10X", "2")).timeLimit).toBe(expected);
+    }
+  });
+});

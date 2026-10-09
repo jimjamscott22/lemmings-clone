@@ -49,6 +49,8 @@ export class Hud {
   private readonly toolButtons = new Map<ActionId, { button: HTMLButtonElement; count: HTMLElement }>();
   private lastToolsKey = "";
   private readonly rateEl = byId("hud-rate");
+  private readonly timeEl = byId("hud-time");
+  private lastTimeText = "";
   private lastRate = -1;
   private readonly nukeEl = byId<HTMLButtonElement>("hud-nuke");
   private readonly nukeLabelEl = byId("hud-nuke-label");
@@ -85,6 +87,14 @@ export class Hud {
     if (rate === this.lastRate) return;
     this.lastRate = rate;
     this.rateEl.textContent = String(rate);
+  }
+
+  setTimeRemaining(seconds: number | null): void {
+    const text = seconds === null ? "Untimed" : `${seconds <= 10 ? "Hurry! " : ""}${formatTime(Math.ceil(seconds))}`;
+    if (text === this.lastTimeText) return;
+    this.lastTimeText = text;
+    this.timeEl.textContent = text;
+    this.timeEl.classList.toggle("text-red-400", seconds !== null && seconds <= 10);
   }
 
   /** The nuke button: ready, armed (waiting for the confirming press) or already fired. */

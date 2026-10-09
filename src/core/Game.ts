@@ -23,7 +23,7 @@ interface Session {
   readonly crowd: Crowd;
   readonly tools: Toolbox;
   readonly nuke: NukeSwitch;
-  /** Set once every lemming is accounted for; the simulation stops. */
+  /** Set when the crowd finishes or the deadline expires; the simulation stops. */
   outcome: "won" | "lost" | null;
   /** What the result panel showed, to bring it back after a visit to the level editor. */
   result: LevelResult | null;
@@ -227,6 +227,7 @@ export class Game {
       name: data.name,
       lemmingCount: data.lemmingCount,
       requiredToSave: data.requiredToSave,
+      timeLimit: data.timeLimit,
       unlocked: this.progress.isUnlocked(this.levelNames, i),
       record: this.progress.get(data.name),
     }));
@@ -293,6 +294,7 @@ export class Game {
     const c = this.session?.crowd;
     return {
       time: +this.time.toFixed(2),
+      timeRemaining: this.timeRemaining,
       paused: this.paused,
       helpOpen: this.help.isOpen,
       levelsOpen: this.levelSelect.isOpen,
@@ -340,13 +342,29 @@ export class Game {
 
     const steps = this.fast ? FAST_SPEED : 1;
     for (let i = 0; i < steps; i++) {
-      this.time += dt;
-      this.session.crowd.update(this.session.world, dt);
+      const remaining = this.timeRemaining;
+      const step = remaining === null ? dt : Math.min(dt, remaining);
+      this.time += step;
+      this.session.crowd.update(this.session.world, step);
+      const atDeadline = remaining !== null && remaining - step < 1e-9;
+      let timedOut = false;
+      if (atDeadline && !this.session.crowd.finished) {
+        this.time = this.session.level.data.timeLimit!;
+        this.session.crowd.expire();
+        this.audio.stop();
+        timedOut = true;
+      }
+      this.checkOutcome(this.session, timedOut);
+      if (this.session.outcome) break;
     }
-    this.checkOutcome(this.session);
   }
 
-  private checkOutcome(session: Session): void {
+  private get timeRemaining(): number | null {
+    const limit = this.session?.level.data.timeLimit;
+    return limit && limit > 0 ? Math.max(0, limit - this.time) : null;
+  }
+
+  private checkOutcome(session: Session, timedOut = false): void {
     const { crowd, level } = session;
     if (!crowd.finished) return;
     const required = level.data.requiredToSave;
@@ -363,6 +381,7 @@ export class Game {
       total: crowd.total,
       hasNext: this.levels.length > 1,
       time: this.time,
+      timedOut,
       trial,
       progress,
     };
@@ -494,6 +513,7 @@ export class Game {
     this.hud.setTools(tools.selected, tools.charges);
     this.hud.setStats({ out: crowd.active, saved: crowd.saved, need: level.data.requiredToSave, lost: crowd.lost });
     this.hud.setReleaseRate(crowd.releaseRate);
+    this.hud.setTimeRemaining(this.timeRemaining);
     this.hud.setNuke(crowd.nuked ? "done" : this.session.nuke.armed ? "armed" : "ready");
     this.hud.setFps(this.loop.fps, performance.now());
   }

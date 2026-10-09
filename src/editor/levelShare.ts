@@ -5,6 +5,8 @@ import { DRAFT_FIELDS, GRID_LIMITS, LevelDraft, type FieldId } from "./LevelDraf
 /** The hash a shared level lives in: `#level=<payload>`. */
 const HASH_PREFIX = "level=";
 const FORMAT_VERSION = "1";
+// Older clients must refuse timed levels rather than silently discard the deadline.
+const TIMED_FORMAT_VERSION = "2";
 /** Longest payload accepted. A full-size map of pure noise encodes to under this. */
 const MAX_PAYLOAD = 12000;
 
@@ -18,12 +20,13 @@ const FIELD_IDS: ReadonlySet<string> = new Set(DRAFT_FIELDS.map((f) => f.id));
  */
 export function encodeLevel(data: LevelData): string {
   const draft = new LevelDraft(data); // normalises names and numbers the same way decoding will
-  const { name, map } = draft.toLevelData();
+  const { name, map, timeLimit } = draft.toLevelData();
   const numbers = DRAFT_FIELDS.map((f) => [f.id, draft.getNumber(f.id)] as const)
     // Only what differs from a fresh level. lemmingCount and requiredToSave are never 0, so always written.
     .filter(([id, n]) => (id === "releaseRate" ? n !== RELEASE_RATE_DEFAULT : n !== 0))
     .map(([id, n]) => `${id}:${n}`);
-  return toBase64Url([FORMAT_VERSION, encodeURIComponent(name), numbers.join(","), packMap(map)].join("|"));
+  const version = timeLimit ? TIMED_FORMAT_VERSION : FORMAT_VERSION;
+  return toBase64Url([version, encodeURIComponent(name), numbers.join(","), packMap(map)].join("|"));
 }
 
 /**
@@ -34,7 +37,9 @@ export function encodeLevel(data: LevelData): string {
 export function decodeLevel(payload: string): LevelData {
   if (payload.length > MAX_PAYLOAD) throw new Error("That level link is too long to be a level.");
   const parts = fromBase64Url(payload).split("|");
-  if (parts.length !== 4 || parts[0] !== FORMAT_VERSION) throw new Error("That level link isn't one this version understands.");
+  if (parts.length !== 4 || (parts[0] !== FORMAT_VERSION && parts[0] !== TIMED_FORMAT_VERSION)) {
+    throw new Error("That level link isn't one this version understands.");
+  }
   const [, name, numbers, map] = parts as [string, string, string, string];
 
   let decodedName: string;

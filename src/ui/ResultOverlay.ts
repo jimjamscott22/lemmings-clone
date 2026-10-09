@@ -10,6 +10,8 @@ export interface LevelResult {
   hasNext: boolean;
   /** Simulated seconds the attempt took. */
   time: number;
+  /** The attempt ended at its deadline rather than by clearing the crowd. */
+  timedOut?: boolean;
   /**
    * Set when this wasn't a real level: a playtest from the editor ("editor", the way on is back to
    * it) or a level opened from a link ("link", which can be copied into the editor). Neither saves anything.
@@ -46,11 +48,12 @@ export class ResultOverlay {
   }
 
   show(r: LevelResult): void {
-    this.title.textContent = r.won ? "Level complete!" : "Not enough saved";
+    this.title.textContent = r.won ? "Level complete!" : r.timedOut ? "Time's up!" : "Not enough saved";
     this.title.classList.toggle("text-lime-300", r.won);
     this.title.classList.toggle("text-red-400", !r.won);
     const pct = Math.round((r.saved / r.total) * 100);
     this.detail.textContent = `Saved ${r.saved} of ${r.total} (${pct}%) — needed ${r.required}, in ${formatTime(r.time)}.`;
+    if (r.timedOut) this.detail.textContent += " Time ran out; everyone who had not reached the exit counts as lost.";
 
     this.levels.classList.toggle("hidden", r.trial === "editor");
     this.editor.classList.toggle("hidden", r.trial !== "editor");

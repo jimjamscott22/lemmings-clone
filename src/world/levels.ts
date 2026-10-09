@@ -107,6 +107,7 @@ export const LEVELS: readonly LevelData[] = [
     name: "Turn Back",
     lemmingCount: 10,
     requiredToSave: 8,
+    timeLimit: 90,
     skills: { blocker: 1 },
     map: [
       "........................................",
@@ -130,8 +131,9 @@ export const LEVELS: readonly LevelData[] = [
     // get down. Then the chasm needs bridging.
     name: "Parachute Drop",
     lemmingCount: 8,
-    requiredToSave: 5,
-    tools: { build: 8 },
+    requiredToSave: 6,
+    timeLimit: 75,
+    tools: { build: 7 },
     skills: { floater: 6 },
     map: [
       "........................................",
@@ -159,11 +161,12 @@ export const LEVELS: readonly LevelData[] = [
   {
     // Climber lesson. The wall is indestructible and too tall to jump, so only climbers get over it. Then
     // there is a chasm to bridge. There is one Climber per lemming: anyone left without one would pace
-    // in front of the wall forever and the level could never end.
+    // in front of the wall until the deadline.
     name: "Over the Wall",
     lemmingCount: 6,
-    requiredToSave: 5,
-    tools: { build: 6 },
+    requiredToSave: 6,
+    timeLimit: 65,
+    tools: { build: 4 },
     skills: { climber: 6 },
     map: [
       "........................................",
@@ -189,8 +192,9 @@ export const LEVELS: readonly LevelData[] = [
     // indestructible slab blocks the diagonal near the start, so the miner has to begin beyond it.
     name: "Down the Mine",
     lemmingCount: 10,
-    requiredToSave: 8,
-    skills: { miner: 2 },
+    requiredToSave: 9,
+    timeLimit: 55,
+    skills: { miner: 1 },
     map: [
       "X..............................X",
       "X..............................X",
@@ -219,8 +223,9 @@ export const LEVELS: readonly LevelData[] = [
     // you get), then bridge the pool.
     name: "Grand Tour",
     lemmingCount: 8,
-    requiredToSave: 6,
-    tools: { dig: 2, build: 8 },
+    requiredToSave: 8,
+    timeLimit: 60,
+    tools: { dig: 1, build: 7 },
     skills: { climber: 8, basher: 1 },
     map: [
       "....................................................",

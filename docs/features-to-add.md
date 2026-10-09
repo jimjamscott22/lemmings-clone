@@ -1,50 +1,70 @@
 # Features to Add
 
-## 1. Content: More Levels (Cheap, Big Payoff)
+Updated October 9, 2026. Implementation status checked against the current workspace source and README. This is a feature inventory and proposed backlog, not a record of browser testing or deployed behavior.
 
-Levels are ASCII maps in `levels.ts`, and `levels.test.ts` already proves each one can be won, so new levels are mostly design work.
+## 1. Currently Implemented
 
-- ~~Add a level select screen with progress saved in `localStorage` (which levels are done, and your best saved count on each).~~ Done: a full-screen level select with levels unlocked in order, backed by `src/progress/Progress.ts`.
-- ~~Add more levels.~~ Done: levels 4–8 teach the blocker, floater, climber and miner one at a time, then combine skills (see `docs/plans/2026-10-04-more-levels.md`).
-- Add difficulty ramps: a time limit, tighter tool charges, and higher save targets.
+### Levels and Progress
 
-## 2. Classic Lemmings Skills Given to Individual Lemmings
+- **Eight built-in levels:** Just Dig It, Mind the Gap, Lend a Hand, Turn Back, Parachute Drop, Over the Wall, Down the Mine, and Grand Tour. Later levels introduce individual skills and then combine them.
+- **Level select:** Levels unlock in order, with completed levels and personal records shown on their cards.
+- **Saved progress:** `localStorage` stores best saved count, fastest win, completed attempts, wins, the last selected level, and grid/sound preferences. Restarting midway does not count as a completed attempt. The last selected level is remembered; an unfinished run is not restored.
+- **Level parameters:** Save targets, terrain-tool charges, skill charges, starting release rate, and per-lemming building bricks are configurable. Optional time limits are implemented, including an editor field, HUD countdown, timeout result, and save/share support.
+- **Difficulty ramp:** Levels 1–3 stay untimed; levels 4–8 have 90/75/65/55/60-second limits. Later levels require more rescues and provide fewer spare tool or skill charges. Pause and menus freeze the timer; fast-forward speeds it up. At expiry, those already entering the exit are saved and everyone else is lost.
+- **Solvability coverage:** `src/world/levels.test.ts` contains known solutions for the built-in levels and checks them within their deadlines.
 
-Right now you change the terrain directly. The original game's main mechanic is clicking a lemming to give it a job. Your FSM registry would handle these well:
+### Tools, Skills, and Run Controls
 
-- **Blocker:** Stands still and turns others around.
-- **Climber / Floater:** Permanent upgrades that let it climb walls or survive long falls.
-- **Basher / Miner:** Digs sideways or diagonally.
-- **Bomber:** A countdown, then it blows up nearby terrain.
+- **Terrain tools:** Dig removes dirt or bridge; Build places bridge tiles. Drag strokes fill gaps between pointer samples.
+- **Six individual skills:** Blocker turns walkers around; Climber and Floater are permanent upgrades; Basher tunnels sideways; Miner digs diagonally; Bomber explodes after a five-second fuse.
+- **Automatic behavior:** Walking, jumping small steps, digging, building with available bricks, swimming, and exiting. Long falls, drowning, and falling off the map can kill lemmings.
+- **Release-rate control:** `−` / `+` and HUD buttons adjust spawning from 1–99, with hold-to-repeat.
+- **Run controls:** Pause, ×3 fast-forward, restart, next level after a win, and a grid overlay. Terrain edits, skill assignments, and release-rate changes work while paused.
+- **Nuke:** Press `K` twice within three seconds, or use the HUD button, to stop spawning and light every active lemming's bomber fuse. Lemmings can still reach the exit before exploding.
 
-You could keep both systems: terrain tools as a global budget and skills given per lemming.
+### Help and Game Feel
 
-## 3. New Tiles and Hazards
+- **How to play guide:** Open with `H` or the UI buttons. Covers behavior, tools, skills, hazards, tactics, controls, progress, and the editor. Opening it freezes gameplay; closing it returns to the previous screen and pause state.
+- **Sound:** Synthesized hatch, digging, and splash effects; a spoken “Yippie!” at the exit with a celebratory tone fallback. The Sound toggle persists between visits.
+- **Visual feedback:** Animated lemmings, water and goals, plus valid/invalid terrain and skill-target highlights. The canvas scales to fit the viewport; interactive camera pan and zoom are not implemented.
 
-Each one is one entry in `TileType.ts` plus a legend character:
+### Editor and Sharing
 
-- **Steel:** Looks diggable but isn't, as a trap for the player.
-- **One-way walls:** You can only dig them from one side.
-- **Lava or spikes:** An instant hazard with no swimming.
-- **Traps:** Crushers or fire jets on a timer.
-- Teleporter pairs, conveyor belts, crumbling floor.
+- **In-browser editor:** Pencil, flood fill, undo/redo, resize, hatch placement, level parameters, validation, built-in level templates, and a blank-map starting point.
+- **Draft workflow:** Browser autosave, playtesting, and export/import as level source, JSON, or plain map rows. Custom playtests do not change campaign progress.
+- **Share by URL:** Compressed `#level=` links contain the level without a server. Shared levels can be played, restarted, and copied into the editor. Imported links are validated before use.
 
-## 4. Game Feel
+Main implementation references: `src/world/levels.ts`, `src/world/TileType.ts`, `src/skills/skills.ts`, `src/core/Game.ts`, `src/progress/Progress.ts`, `src/ui/HelpGuide.ts`, `src/audio/GameAudio.ts`, and `src/editor/`.
 
-- ~~Sound effects with the Web Audio API: the hatch opening, digging, a splash, a "yippee" at the exit.~~ Done: synthesized hatch, digging, and splash effects; a high-pitched browser-spoken “Yippie!” with a celebratory chirp fallback; and a saved Sound on/off toggle.
-- Particles for dirt debris, splashes, and a burst at the exit.
-- A release-rate control (`+`/`-` to speed up or slow down spawning), as in the original.
-- ~~**Nuke:** Blow up all lemmings to end a hopeless run.~~ Done: press `K` twice (or the HUD button). See `docs/plans/2026-10-06-nuke.md`.
-- Camera scroll and zoom for levels bigger than the screen.
+## 2. Recommended Next Features
 
-## 5. Tooling
+These are proposals, not implemented features. Effort is relative: **Small** uses existing systems, **Medium** crosses several systems, and **Large** introduces substantial simulation or persistence work.
 
-- ~~An in-browser level editor that paints tiles and exports the ASCII map.~~ Done: press `E`. Pencil and fill, undo, resize, level parameters, playtest, autosave, and export/import as `levels.ts` source (see `docs/plans/2026-10-04-level-editor.md`).
-- Replays: the simulation is DOM-free with a fixed timestep, so recording the inputs and the tick each one happened on gives deterministic replays almost for free.
-- ~~Share a level as a URL by encoding the ASCII map in the hash.~~ Done: **Share** in the editor copies a `#level=` link that opens the level in anyone's game (see `docs/plans/2026-10-05-share-by-url.md`).
+| Priority | Feature | First useful version | Why add it? | Effort |
+| --- | --- | --- | --- | --- |
+| 1 | **Challenge level pack** | Add 4–6 levels using the existing skills, with tighter budgets, higher save targets, and a known solution for each. | Gives players more to do with mechanics already built. | Small–Medium |
+| 2 | **Better crowd targeting** | Let players cycle overlapping lemmings and filter by facing direction; keep the chosen target clearly highlighted. | Makes precise skill assignment easier in a crowded area. | Medium |
+| 3 | **Spikes or lava** | Add one clearly marked instant-death tile, editor support, and two levels that teach it. | Adds a new routing constraint beyond water and fatal falls. | Medium |
+| 4 | **Challenge medals** | Add optional save-all, limited-tool, or speed targets, with persistent badges on level cards. | Encourages replay without making the basic win condition harder. | Medium |
+| 5 | **Custom-level library** | Save multiple named drafts locally, duplicate them, and export/import a collection. Keep custom records separate from campaign progress. | Makes the existing editor and sharing workflow useful beyond a single draft. | Medium |
+| 6 | **Particles and clearer feedback** | Dirt debris, splashes, exit bursts, and a brief explanation when a skill cannot be assigned; include reduced-effects settings. | Makes actions and mistakes easier to read. | Small–Medium |
+
+## 3. Larger Follow-ups
+
+- **One-way diggable terrain:** Allow tunneling only in the indicated direction. Define how Dig, Basher, Miner, and explosions interact with it, and use clear directional artwork.
+- **Timed traps and moving terrain:** Crushers, fire jets, conveyors, or crumbling floors. Start with one mechanic and introduce it in dedicated levels before combining several.
+- **Camera pan and zoom:** Make larger maps practical, with matching pointer coordinates for gameplay and the editor. Add a minimap only if navigation needs it.
+- **Replay recording and playback:** Record ordered simulation actions, including terrain strokes, skill targets, release-rate changes, and nukes. Store the level and simulation version, and verify playback against the original outcome. The fixed timestep helps, but paused inputs and fast-forward need explicit handling.
+- **Rewind or checkpoints:** Let players recover from a bad assignment. This needs restorable terrain, lemming states, timers, charges, spawn state, and outcomes; it is a separate feature from replay playback.
+- **Mobile and accessibility improvements:** Larger touch targets, a way to inspect a skill target before assigning it, remappable shortcuts, and high-contrast indicators that do not rely on color alone.
+
+## 4. Implementation Notes
+
+- **Indestructible terrain already exists:** `Wall` (`X`) is solid and non-diggable. A separate Steel tile needs a distinct purpose; otherwise, clearer wall artwork is enough. Make indestructible terrain recognizable rather than disguising it as dirt.
+- **New hazards need behavior as well as a tile entry:** Add tile properties, an ASCII legend character, artwork, simulation rules, and coverage for tool/skill interactions. The editor derives its brushes from tile definitions, but import/export and shared-level validation still need checking.
+- **Protect existing progress and shared links:** Progress currently uses level names as keys. Stable level IDs and a migration would make renaming levels safer. New level fields or replay formats need deliberate compatibility handling.
+- **Use existing tests as the foundation:** Add known solutions for new levels and focused coverage for new interactions. Documentation status alone does not prove a level is playable.
 
 ## My Recommendation
 
-> Start with 5–8 more levels plus a level select screen, then add skills given to individual lemmings (Blocker and Basher first). More levels make the current mechanics worth playing, and skills are what make it feel like Lemmings rather than a sandbox. If you'd rather build the level editor first, it would make producing those levels much faster.
-
-**Status:** levels, level select, skills, the level editor and sharing by URL are all done. Next up: new tiles and hazards (section 3), which give the levels new puzzles (the editor picks up new tile types from `LEGEND` on its own). The nuke is in, so a level with stuck lemmings can now be ended.
+Start with **a challenge level pack and better crowd targeting**, then add **one new hazard with a small teaching pack**. Follow with medals and a custom-level library. This adds playable content, improves the most precise interaction, and gives players a reason to return. Replays, rewind, and moving-world mechanics are valuable later, once their larger implementation cost is justified.

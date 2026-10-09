@@ -30,7 +30,9 @@ function play(index: number, strokes: Array<[ToolId, [number, number], [number, 
   const crowd = new Crowd(level);
   const world = { grid: level.grid, lemmings: crowd.lemmings };
   const pending = [...cues];
-  for (let i = 0; i < 300 / FIXED_TIMESTEP && !crowd.finished; i++) {
+  const deadline = level.data.timeLimit ?? 300;
+  let elapsed = 0;
+  for (let i = 0; i < Math.floor(deadline / FIXED_TIMESTEP) && !crowd.finished; i++) {
     const cue = pending[0];
     if (cue) {
       tools.select(cue.skill);
@@ -38,8 +40,14 @@ function play(index: number, strokes: Array<[ToolId, [number, number], [number, 
       if (target && tools.assign(target, world)) pending.shift();
     }
     crowd.update(world, FIXED_TIMESTEP);
+    elapsed += FIXED_TIMESTEP;
   }
-  return { crowd, tools, pending, required: level.data.requiredToSave };
+  return { crowd, tools, pending, required: level.data.requiredToSave, elapsed, deadline };
+}
+
+/** Known solutions for timed levels should finish with headroom under the HUD deadline. */
+function expectWithinTimeSlack(elapsed: number, deadline: number): void {
+  expect(elapsed).toBeLessThanOrEqual(deadline * 0.9);
 }
 
 const walkingAt = (l: Lemming, col: number, row: number, dir: 1 | -1 = 1) =>
@@ -123,10 +131,11 @@ describe("levels", () => {
     });
 
     it("is winnable with a blocker at the cliff edge", () => {
-      const { crowd, pending, required } = play(3, [], [{ skill: "blocker", when: (l) => walkingAt(l, 25, 4) }]);
+      const { crowd, pending, required, elapsed, deadline } = play(3, [], [{ skill: "blocker", when: (l) => walkingAt(l, 25, 4) }]);
       expect(pending).toEqual([]);
       expect(crowd.finished).toBe(true);
       expect(crowd.saved).toBeGreaterThanOrEqual(required);
+      expectWithinTimeSlack(elapsed, deadline);
     });
   });
 
@@ -147,10 +156,11 @@ describe("levels", () => {
     });
 
     it("is winnable by floating down and bridging the chasm", () => {
-      const { crowd, pending, required } = play(4, bridge, times(6, { skill: "floater", when: onPlateau }));
+      const { crowd, pending, required, elapsed, deadline } = play(4, bridge, times(6, { skill: "floater", when: onPlateau }));
       expect(pending).toEqual([]);
       expect(crowd.finished).toBe(true);
       expect(crowd.saved).toBeGreaterThanOrEqual(required);
+      expectWithinTimeSlack(elapsed, deadline);
     });
   });
 
@@ -169,10 +179,11 @@ describe("levels", () => {
     });
 
     it("is winnable by climbing the wall and bridging the chasm", () => {
-      const { crowd, pending, required } = play(5, bridge, times(6, { skill: "climber", when: beforeWall }));
+      const { crowd, pending, required, elapsed, deadline } = play(5, bridge, times(6, { skill: "climber", when: beforeWall }));
       expect(pending).toEqual([]);
       expect(crowd.finished).toBe(true);
       expect(crowd.saved).toBeGreaterThanOrEqual(required);
+      expectWithinTimeSlack(elapsed, deadline);
     });
   });
 
@@ -183,10 +194,11 @@ describe("levels", () => {
     });
 
     it("is winnable by mining down past the slab", () => {
-      const { crowd, pending, required } = play(6, [], [{ skill: "miner", when: (l) => walkingAt(l, 14, 5) }]);
+      const { crowd, pending, required, elapsed, deadline } = play(6, [], [{ skill: "miner", when: (l) => walkingAt(l, 14, 5) }]);
       expect(pending).toEqual([]);
       expect(crowd.finished).toBe(true);
       expect(crowd.saved).toBeGreaterThanOrEqual(required);
+      expectWithinTimeSlack(elapsed, deadline);
     });
   });
 
@@ -196,7 +208,7 @@ describe("levels", () => {
     const atBarricade = (l: Lemming) => l.state.name === "walking" && l.bodyRow === 10 && l.col >= 15 && l.col <= 22 && l.dir === 1;
     const climbers = times(8, { skill: "climber", when: beforeWall });
 
-    it("is lost with the dig tool alone (two charges can't tunnel the barricade)", () => {
+    it("is lost with the dig tool alone (one charge can't tunnel the barricade)", () => {
       const { crowd, required } = play(7, [...pool, ["dig", [24, 10], [26, 10]]], climbers);
       expect(crowd.saved).toBeLessThan(required);
     });
@@ -207,10 +219,11 @@ describe("levels", () => {
     });
 
     it("is winnable by climbing, bashing and bridging", () => {
-      const { crowd, pending, required } = play(7, pool, [...climbers, { skill: "basher", when: atBarricade }]);
+      const { crowd, pending, required, elapsed, deadline } = play(7, pool, [...climbers, { skill: "basher", when: atBarricade }]);
       expect(pending).toEqual([]);
       expect(crowd.finished).toBe(true);
       expect(crowd.saved).toBeGreaterThanOrEqual(required);
+      expectWithinTimeSlack(elapsed, deadline);
     });
   });
 });
