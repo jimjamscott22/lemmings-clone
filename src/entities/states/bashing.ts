@@ -22,12 +22,12 @@ export const bashing: LemmingState = {
       walkStep(l, world, dt);
       return;
     }
-    if (!grid.isDiggable(col, row)) return l.setState("walking", world);
+    if (!grid.isDiggable(col, row, l.dir)) return l.setState("walking", world);
     if (l.stateTime < BASH_TIME) return;
 
     grid.set(col, row, TileType.Empty);
     world.onEvent?.("dig");
     l.stateTime = 0;
-    if (!grid.isDiggable(col + l.dir, row)) l.setState("walking", world);
+    if (!grid.isDiggable(col + l.dir, row, l.dir)) l.setState("walking", world);
   },
 };

@@ -1,6 +1,6 @@
 import { BOMB_FUSE, LEMMING_HALF_WIDTH, TILE_SIZE } from "../config";
 import type { Grid } from "../world/Grid";
-import { TileType } from "../world/TileType";
+import { TILE_PROPS, TileType } from "../world/TileType";
 import { blast } from "./blast";
 import { STATES, type LemmingState, type StateName } from "./states";
 import { toTile, type World } from "./World";
@@ -91,8 +91,12 @@ export class Lemming {
     this.stateTime += dt;
     if (this.tickFuse(world, dt)) return;
     this.escapeTerrain(world);
+    if (this.done) return;
     this.checkTriggers(world);
+    if (this.done) return;
     this.state.update(this, world, dt);
+    // Movement may enter a hazard this tick; retire before another update or fuse explosion.
+    if (!this.done) this.checkTriggers(world);
   }
 
   /** Start the bomber countdown, unless one is already running or the lemming is already on its way out. */
@@ -112,12 +116,13 @@ export class Lemming {
     return true;
   }
 
-  /** Tiles that take over whatever the lemming was doing: the goal and water. */
+  /** Contact triggers, including instant hazards that never enter the swimming state. */
   private checkTriggers(world: World): void {
     const name = this.state.name;
     if (name === "exiting") return;
     const tile = world.grid.get(this.col, this.bodyRow);
-    if (tile === TileType.Goal) this.setState("exiting", world);
+    if (TILE_PROPS[tile].instantDeath) this.retire("lost");
+    else if (tile === TileType.Goal) this.setState("exiting", world);
     else if (tile === TileType.Water && name !== "swimming") this.setState("swimming", world);
   }
 

@@ -85,7 +85,7 @@ function guideContent(): string {
       <h3 id="guide-tools-title">Terrain tools: change the map</h3>
       <p>Click a toolbar button or press its number, then click or drag over tiles. The number beside each tool is its remaining level-wide budget. Each successful tile edit spends one charge; invalid tiles spend nothing.</p>
       <div class="guide-cards">
-        <article><h4><kbd>1</kbd> Dig</h4><p>Removes dirt and bridge tiles. Use it to open a passage, cut steps down a slope, or remove support under a Blocker.</p><p><strong>Watch out:</strong> it cannot remove walls, water, the goal, or the hatch. Removing a floor can send the crowd into a fatal drop.</p></article>
+        <article><h4><kbd>1</kbd> Dig</h4><p>Removes dirt and bridge tiles. Use it to open a passage, cut steps down a slope, or remove support under a Blocker.</p><p><strong>Watch out:</strong> it cannot remove walls, steel, one-way walls, hazards, the goal, or the hatch. Removing a floor can send the crowd into a fatal drop.</p></article>
         <article><h4><kbd>2</kbd> Build</h4><p>Places bridge tiles in empty air. Drag a walkway across a gap or above water, or make one-tile steps to a higher platform.</p><p><strong>Watch out:</strong> it cannot replace existing tiles or plug the hatch. Leave room for lemmings' bodies: burying them deeply in new blocks can crush them.</p></article>
       </div>
       <p>These tools act immediately wherever you edit the map. They do not assign a Digger or Builder job to a lemming.</p>
@@ -106,7 +106,7 @@ function guideContent(): string {
           <p><strong>Use it:</strong> protect a scout taking a long drop, or pause and assign it to a falling lemming before it lands.</p>
           <p><strong>Watch out:</strong> it protects only against fall damage. It does not prevent drowning, explosions, crushing, or falling out of the bottom of the map.</p></article>
         <article><h4><kbd>5</kbd> Bomber <span>One-use fuse</span></h4>
-          <p><strong>What it does:</strong> counts down ${BOMB_FUSE} simulation seconds, then kills that lemming and removes diggable terrain whose tile centers are within ${BOMB_RADIUS / TILE_SIZE} tiles of the blast. Walls remain intact.</p>
+          <p><strong>What it does:</strong> counts down ${BOMB_FUSE} simulation seconds, then kills that lemming and removes dirt and bridge whose tile centers are within ${BOMB_RADIUS / TILE_SIZE} tiles of the blast. Walls, steel, and one-way walls remain intact.</p>
           <p><strong>Use it:</strong> remove a Blocker or blast an opening in nearby dirt or bridge. A moving Bomber keeps moving, so plan where it will be when the fuse runs out.</p>
           <p><strong>Watch out:</strong> there is no cancel button. Reaching the goal in time defuses it and saves it. The blast removes terrain rather than directly killing nearby lemmings, but losing their floor can still be deadly. Pausing freezes the fuse; fast-forward speeds it up.</p></article>
         <article><h4><kbd>6</kbd> Blocker <span>Stationary job</span></h4>
@@ -130,6 +130,9 @@ function guideContent(): string {
         <li><strong>Long falls:</strong> a fall greater than ${SPLAT_HEIGHT / TILE_SIZE} tiles onto solid ground is fatal without Floater. Build intermediate landings or protect the individual lemming.</li>
         <li><strong>Water:</strong> swimming is a short escape window, not a safe way across a wide pool. Bridge over it or provide a nearby low bank.</li>
         <li><strong>Walls:</strong> these are solid and indestructible. Dig, Basher, Miner, and Bomber cannot remove them. Go over or around them.</li>
+        <li><strong>Steel:</strong> dirt-like tiles with metallic flecks are indestructible too. Lemmings can stand on or climb them, but no digging job, terrain tool, or explosion can remove them.</li>
+        <li><strong>One-way walls:</strong> arrows show the permitted cutting direction. A Basher or Miner facing that direction can tunnel through; facing the opposite way stops the job. Automatic digging, the Dig tool, and explosions cannot remove them.</li>
+        <li><strong>Lava and spikes:</strong> contact kills instantly, without a swimming escape window. Floater does not protect against them. Build above them or find another route; you cannot dig them away or build directly into them.</li>
         <li><strong>The void and crushing:</strong> falling below the map loses a lemming, even a Floater. Avoid enclosing lemmings in stacks of bridge blocks.</li>
       </ul>
       <p><strong>Hold, build, release:</strong> place a Blocker before a dangerous ledge, pause, build a walkway, then remove the Blocker's support only if there is safe ground below it. Do this before only Blockers remain.</p>
@@ -160,7 +163,7 @@ function guideContent(): string {
     <section id="guide-extras" aria-labelledby="guide-extras-title">
       <h3 id="guide-extras-title">Progress, editor, and sharing</h3>
       <p>Built-in levels unlock in order. Winning unlocks the next level; cards show your best saved count, fastest win, and completed attempts. Progress, the last played level, and your grid and sound preferences are saved in this browser. Reset progress on level select clears those records and preferences and locks all but the first level.</p>
-      <p>Press <kbd>E</kbd> or click Editor to create a level. The current game is frozen while editing. Choose brushes with <kbd>1</kbd>–<kbd>7</kbd>: Empty, Dirt, Water, Wall, Bridge, Goal, and Hatch. Use <kbd>B</kbd> for the drag pencil or <kbd>F</kbd> for flood fill, and <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Z</kbd> / <kbd>Y</kbd> for undo / redo.</p>
+      <p>Press <kbd>E</kbd> or click Editor to create a level. The current game is frozen while editing. Choose brushes with <kbd>1</kbd>–<kbd>7</kbd>: Empty, Dirt, Water, Wall, Bridge, Goal, and Hatch. Extra brushes use <kbd>8</kbd> for Steel, <kbd>9</kbd> for One-way ←, <kbd>0</kbd> for One-way →, <kbd>Q</kbd> for Lava, and <kbd>W</kbd> for Spikes. You can also click any brush. Use <kbd>B</kbd> for the drag pencil or <kbd>F</kbd> for flood fill, and <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Z</kbd> / <kbd>Y</kbd> for undo / redo.</p>
       <p>The editor lets you set the map size, name, lemming count, save target, time limit in seconds (0 means untimed), release rate, personal bricks, and each tool or skill budget. A playable level needs a name, hatch, goal, and a valid save target; the editor lists any problems.</p>
       <p>Press <kbd>P</kbd> to playtest a valid draft. Playtesting replaces the active attempt, but never records built-in progress. Use <kbd>E</kbd> or <kbd>Esc</kbd> to return to the editor. Your draft is saved automatically in this browser.</p>
       <p>Share copies a link containing the whole custom level. Someone opening it can play immediately without affecting built-in progress. On its result screen, Edit a copy loads it into the editor after confirming replacement of the current draft. Export / import can also copy or load level text and share links.</p>

@@ -18,11 +18,11 @@ export const mining: LemmingState = {
 
     const col = l.col + l.dir;
     const row = l.bodyRow;
-    if (isHard(grid, col, row) || isHard(grid, col, row + 1)) return l.setState("walking", world);
+    if (isHard(grid, col, row, l.dir) || isHard(grid, col, row + 1, l.dir)) return l.setState("walking", world);
 
     let cleared = false;
     for (const r of [row, row + 1]) {
-      if (!grid.isDiggable(col, r)) continue;
+      if (!grid.isDiggable(col, r, l.dir)) continue;
       grid.set(col, r, TileType.Empty);
       cleared = true;
     }
@@ -35,6 +35,6 @@ export const mining: LemmingState = {
 };
 
 /** Solid but undiggable: wall, or the side edges of the map. */
-function isHard(grid: Grid, col: number, row: number): boolean {
-  return grid.isSolid(col, row) && !grid.isDiggable(col, row);
+function isHard(grid: Grid, col: number, row: number, direction: 1 | -1): boolean {
+  return grid.isSolid(col, row) && !grid.isDiggable(col, row, direction);
 }
