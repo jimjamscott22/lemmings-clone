@@ -1,6 +1,6 @@
 import { MINE_TIME, TILE_SIZE } from "../../config";
 import type { Grid } from "../../world/Grid";
-import { TileType } from "../../world/TileType";
+import { TILE_PROPS, TileType } from "../../world/TileType";
 import type { LemmingState } from "./LemmingState";
 
 /**
@@ -19,6 +19,7 @@ export const mining: LemmingState = {
     const col = l.col + l.dir;
     const row = l.bodyRow;
     if (isHard(grid, col, row, l.dir) || isHard(grid, col, row + 1, l.dir)) return l.setState("walking", world);
+    if (isInstantDeath(grid, col, row) || isInstantDeath(grid, col, row + 1)) return l.retire("lost");
 
     let cleared = false;
     for (const r of [row, row + 1]) {
@@ -37,4 +38,8 @@ export const mining: LemmingState = {
 /** Solid but undiggable: wall, or the side edges of the map. */
 function isHard(grid: Grid, col: number, row: number, direction: 1 | -1): boolean {
   return grid.isSolid(col, row) && !grid.isDiggable(col, row, direction);
+}
+
+function isInstantDeath(grid: Grid, col: number, row: number): boolean {
+  return TILE_PROPS[grid.get(col, row)].instantDeath === true;
 }

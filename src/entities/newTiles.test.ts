@@ -100,6 +100,48 @@ describe("instant hazards", () => {
       expect(crowd.saved).toBe(0);
     });
   }
+
+  for (const [tile, label] of [[TileType.Lava, "lava"], [TileType.Spikes, "spikes"]] as const) {
+    for (const [lower, lowerLabel] of [[TileType.Empty, "empty"], [TileType.Dirt, "dirt"]] as const) {
+      it(`miner dies when the ${label} tile is the upper cell of a mining step over ${lowerLabel}`, () => {
+        const { world, lemming } = setup([
+          "S.......",
+          "........",
+          "........",
+          "........",
+          "........",
+          "########",
+        ]);
+        lemming.x = 2.5 * TILE_SIZE;
+        lemming.y = 5 * TILE_SIZE;
+        world.grid.set(3, 4, tile);
+        world.grid.set(3, 5, lower);
+        lemming.setState("mining", world);
+        run(world, lemming, 1);
+        expect(lemming.done).toBe(true);
+        expect(lemming.fate).toBe("lost");
+      });
+    }
+
+    it(`miner dies when the ${label} tile is the lower cell of a mining step`, () => {
+      const { world, lemming } = setup([
+        "S.......",
+        "........",
+        "........",
+        "........",
+        "........",
+        "########",
+      ]);
+      lemming.x = 2.5 * TILE_SIZE;
+      lemming.y = 5 * TILE_SIZE;
+      world.grid.set(3, 4, TileType.Empty);
+      world.grid.set(3, 5, tile);
+      lemming.setState("mining", world);
+      run(world, lemming, 1);
+      expect(lemming.done).toBe(true);
+      expect(lemming.fate).toBe("lost");
+    });
+  }
 });
 
 describe("new tile authoring", () => {
