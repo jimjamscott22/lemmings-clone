@@ -79,6 +79,8 @@ Press `E` (or the **Editor** button) to build your own level. The game is frozen
 | Input | Action |
 | --- | --- |
 | `1`–`7` | Pick a brush: Empty, Dirt, Water, Wall, Bridge, Goal, or the spawn Hatch |
+| `8` / `9` / `0` | Steel / One-way left / One-way right |
+| `Q` / `W` | Lava / Spikes |
 | `B` / `F` | Pencil (drag to paint; fast drags leave no gaps) / Fill (click to flood-fill a connected area) |
 | `Ctrl`+`Z`, `Ctrl`+`Y` | Undo / redo map changes (`Cmd` on a Mac) |
 | `P` | Playtest the level: it runs like the real game, but nothing is saved |
@@ -111,6 +113,8 @@ Terrain tools are a global budget you spend on tiles. Skills are a second budget
 | **Miner** | Digs a staircase diagonally down and forward until it breaks through or hits a wall. |
 
 Falls of more than 9 tiles are fatal. If only blockers are left, the level ends and they count as lost.
+
+Steel (`H`) looks like dirt with metallic flecks but resists every digging job and explosion. One-way walls (`<` / `>`) can only be cut by a Basher or Miner moving in the arrow's direction; automatic digging, the Dig tool, and bombs cannot bypass them. Lava (`L`) and spikes (`^`) kill immediately on contact, even with Floater. Build above hazards or route around them. All five new tile types are available in the editor, exports/imports, and shared links.
 
 **Nuke** (`K`, pressed twice within 3 seconds) is for a run that has gone wrong: lemmings still in the hatch never come out and count as lost, and everyone in play gets the Bomber's 5-second fuse. Anyone who reaches the exit before it burns down is still saved, so a level you've already won on can finish early. It can't be undone, and a restart (`R`) is the way back.
 
@@ -151,4 +155,4 @@ src/
 
 - **States are stateless singletons.** Per-lemming data lives on `Lemming`. Transitions go through a name-keyed registry, so state modules never import each other.
 - **The simulation is DOM-free.** `Grid`, `Lemming`, `Crowd` and `Toolbox` run headless in Vitest. `levels.test.ts` plays each level with a known solution (terrain strokes and timed skill assignments) to prove it can be won.
-- **Levels are ASCII maps** in `src/world/levels.ts`. The legend: `.` empty, `#` dirt, `X` wall, `~` water, `=` bridge, `G` goal, `S` spawn.
+- **Levels are ASCII maps** in `src/world/levels.ts`. The legend: `.` empty, `#` dirt, `X` wall, `~` water, `=` bridge, `G` goal, `S` spawn, `H` steel, `<` / `>` one-way walls, `L` lava, `^` spikes.
