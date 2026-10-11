@@ -386,6 +386,7 @@ export class Game {
       progress,
     };
     this.overlay.show(session.result);
+    this.audio.play(won ? "won" : "lost");
   }
 
   /** While the level select is open, only Esc / L (close) count; everything else is dropped. */
@@ -480,7 +481,7 @@ export class Game {
     if (tools.selectedSkill) {
       for (const p of clicks) {
         const target = crowd.lemmingAt(p, (l) => tools.canAssign(l));
-        if (target) tools.assign(target, world);
+        if (target && tools.assign(target, world) && !this.paused) this.audio.play(tools.selectedSkill.id);
       }
       return;
     }

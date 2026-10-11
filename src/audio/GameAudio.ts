@@ -1,20 +1,49 @@
 import type { SimulationEvent } from "../entities/World";
+import type { SkillId } from "../skills/skills";
+import yippieUrl from "./assets/YIPPEE1.wav?url";
+import letsGoUrl from "./assets/LETSGO1.wav?url";
+import climberUrl from "./assets/CLIMBER2.wav?url";
+import floaterUrl from "./assets/FLOATER1.wav?url";
+import bomberUrl from "./assets/BOMBER.wav?url";
+import blockerUrl from "./assets/BLOCKER1.wav?url";
+import basherUrl from "./assets/BASHER2.wav?url";
+import minerUrl from "./assets/MINER2.wav?url";
+import cheersUrl from "./assets/CHEERS1.wav?url";
+import boosUrl from "./assets/BOOS.wav?url";
 
-const COOLDOWN: Record<SimulationEvent, number> = { hatch: 0.3, dig: 0.08, splash: 0.12, exit: 0.8 };
+type AudioEvent = SimulationEvent | SkillId | "won" | "lost";
+type SampleEvent = Exclude<AudioEvent, "dig" | "splash">;
+
+const SAMPLE_URLS: Record<SampleEvent, string> = {
+  hatch: letsGoUrl, exit: yippieUrl,
+  climber: climberUrl, floater: floaterUrl, bomber: bomberUrl,
+  blocker: blockerUrl, basher: basherUrl, miner: minerUrl,
+  won: cheersUrl, lost: boosUrl,
+};
+const COOLDOWN: Record<AudioEvent, number> = {
+  hatch: 0.3, dig: 0.08, splash: 0.12, exit: 0.8,
+  climber: 0.3, floater: 0.3, bomber: 0.3, blocker: 0.3, basher: 0.3, miner: 0.3,
+  won: 1, lost: 1,
+};
 
 /** Browser-only sound output. Simulation events never depend on audio being available. */
 export class GameAudio {
   private context: AudioContext | null = null;
   private unlocked = false;
   private readonly sources = new Set<AudioScheduledSourceNode>();
-  private readonly lastPlayed = new Map<SimulationEvent, number>();
-  private utterance: SpeechSynthesisUtterance | null = null;
-  private readonly played: Record<SimulationEvent, number> = { hatch: 0, dig: 0, splash: 0, exit: 0 };
-  private exitVoice: "speech" | "chirp" | null = null;
+  private readonly lastPlayed = new Map<AudioEvent, number>();
+  private readonly sampleBuffers = new Map<SampleEvent, AudioBuffer>();
+  private samplesLoad: Promise<void> | null = null;
+  private voiceSource: AudioBufferSourceNode | null = null;
+  private voiceEvent: SampleEvent | null = null;
+  private voiceEndsAt = 0;
+  private readonly played: Record<AudioEvent, number> = {
+    hatch: 0, dig: 0, splash: 0, exit: 0,
+    climber: 0, floater: 0, bomber: 0, blocker: 0, basher: 0, miner: 0, won: 0, lost: 0,
+  };
+  private exitVoice: "sample" | "chirp" | null = null;
 
   constructor(private enabled: boolean) {
-    // Some browsers load voices asynchronously after the first query; start that before a rescue.
-    try { window.speechSynthesis?.getVoices(); } catch { /* The chirp remains available. */ }
     // Resume/create the context in the actual gesture, never in an animation frame.
     const unlock = (event: Event) => {
       if (event.isTrusted && (!(event instanceof KeyboardEvent) || !event.repeat)) this.unlock();
@@ -37,6 +66,7 @@ export class GameAudio {
     if (!this.enabled) return;
     try {
       this.context ??= new AudioContext();
+      this.loadSamples(this.context);
       this.unlocked = true;
       if (this.context.state === "suspended") void this.context.resume().catch(() => {});
     } catch {
@@ -44,7 +74,21 @@ export class GameAudio {
     }
   }
 
-  play(event: SimulationEvent): void {
+  private loadSamples(context: AudioContext): void {
+    this.samplesLoad ??= (async () => {
+      for (const event of Object.keys(SAMPLE_URLS) as SampleEvent[]) {
+        try {
+          const response = await fetch(SAMPLE_URLS[event]);
+          if (!response.ok) continue;
+          this.sampleBuffers.set(event, await context.decodeAudioData(await response.arrayBuffer()));
+        } catch {
+          // Prepare samples only; late loading never replays a stopped event.
+        }
+      }
+    })();
+  }
+
+  play(event: AudioEvent): void {
     const context = this.context;
     if (!this.enabled || !this.unlocked || document.hidden || context?.state !== "running") return;
     const now = context.currentTime;
@@ -54,6 +98,10 @@ export class GameAudio {
     try {
       switch (event) {
         case "hatch":
+          if (this.sampleBuffers.has("hatch")) {
+            if (!this.sample("hatch")) return;
+            break;
+          }
           this.tone(180, 420, 0.15, 0.12, "triangle");
           this.noise(0.12, 0.08, 900, "lowpass");
           break;
@@ -66,27 +114,33 @@ export class GameAudio {
           this.tone(550, 160, 0.16, 0.05, "sine");
           break;
         case "exit":
-          if (!this.yippie()) return;
+          if (this.voiceSource) return;
+          if (this.sampleBuffers.has("exit")) {
+            if (!this.sample("exit")) return;
+            this.exitVoice = "sample";
+          } else this.chirp();
+          break;
+        default:
+          if (!this.sample(event)) return;
           break;
       }
       this.played[event]++;
     } catch {
-      // Device changes or unavailable speech output should stay silent, not break gameplay.
+      // Device changes or unavailable audio output should stay silent, not break gameplay.
     }
   }
 
   /** Drop active output and cooldowns. Nothing is queued for resume or the next level. */
   stop(): void {
+    this.voiceSource = null;
+    this.voiceEvent = null;
+    this.voiceEndsAt = 0;
     for (const source of this.sources) {
       try { source.stop(); } catch { /* Already ended. */ }
       source.disconnect();
     }
     this.sources.clear();
     this.lastPlayed.clear();
-    if (this.utterance) {
-      this.utterance = null;
-      window.speechSynthesis?.cancel();
-    }
   }
 
   debug(): object {
@@ -95,7 +149,10 @@ export class GameAudio {
       unlocked: this.unlocked,
       contextState: this.context?.state ?? "uninitialized",
       activeSources: this.sources.size,
-      speaking: this.utterance !== null,
+      exitPlaying: this.voiceEvent === "exit",
+      sampleReady: this.sampleBuffers.has("exit"),
+      voicePlaying: this.voiceEvent,
+      loadedSamples: [...this.sampleBuffers.keys()],
       exitVoice: this.exitVoice,
       played: { ...this.played },
     };
@@ -153,41 +210,31 @@ export class GameAudio {
     this.tone(880, 1320, 0.22, 0.1, "sine", 0.12);
   }
 
-  private yippie(): boolean {
-    // Don't build an ever-growing speech queue when the crowd reaches the goal together.
-    if (this.utterance) return false;
-    const speech = window.speechSynthesis;
-    let voices: SpeechSynthesisVoice[] = [];
-    try { voices = speech?.getVoices() ?? []; } catch { /* Use the chirp below. */ }
-    const voice = voices.find((v) => v.localService && /^en(?:-|$)/i.test(v.lang))
-      ?? voices.find((v) => /^en(?:-|$)/i.test(v.lang));
-    if (!voice || typeof SpeechSynthesisUtterance === "undefined") {
-      this.chirp();
-      return true;
-    }
-
-    const utterance = new SpeechSynthesisUtterance("Yippie!");
-    utterance.voice = voice;
-    utterance.lang = voice.lang;
-    utterance.pitch = 2;
-    utterance.rate = 1.3;
-    utterance.volume = 0.5;
-    this.utterance = utterance;
-    this.exitVoice = "speech";
-    utterance.onend = () => {
-      if (this.utterance === utterance) this.utterance = null;
-    };
-    utterance.onerror = () => {
-      if (this.utterance !== utterance) return; // A cancelled phrase must not chirp in a menu.
-      this.utterance = null;
-      if (this.enabled && !document.hidden && this.context?.state === "running") this.chirp();
-    };
-    try {
-      speech.speak(utterance);
-    } catch {
-      this.utterance = null;
-      this.chirp();
-    }
+  private sample(event: SampleEvent): boolean {
+    const buffer = this.sampleBuffers.get(event);
+    if (!buffer) return false;
+    const outcome = event === "won" || event === "lost";
+    // Drop crowded acknowledgements; only the result may follow the final rescue voice.
+    if (this.voiceSource && !outcome) return false;
+    if (this.voiceSource && (this.voiceEvent === "won" || this.voiceEvent === "lost")) return false;
+    const context = this.context!;
+    const at = Math.max(context.currentTime, this.voiceEndsAt);
+    const source = context.createBufferSource();
+    const gain = context.createGain();
+    source.buffer = buffer;
+    gain.gain.value = 0.5;
+    source.connect(gain).connect(context.destination);
+    this.track(source, gain);
+    source.addEventListener("ended", () => {
+      if (this.voiceSource !== source) return;
+      this.voiceSource = null;
+      this.voiceEvent = null;
+      this.voiceEndsAt = 0;
+    }, { once: true });
+    source.start(at);
+    this.voiceSource = source;
+    this.voiceEvent = event;
+    this.voiceEndsAt = at + buffer.duration;
     return true;
   }
 }

@@ -25,7 +25,7 @@ Updated October 9, 2026. Implementation status checked against the current works
 ### Help and Game Feel
 
 - **How to play guide:** Open with `H` or the UI buttons. Covers behavior, tools, skills, hazards, tactics, controls, progress, and the editor. Opening it freezes gameplay; closing it returns to the previous screen and pause state.
-- **Sound:** Synthesized hatch, digging, and splash effects; a spoken “Yippie!” at the exit with a celebratory tone fallback. The Sound toggle persists between visits.
+- **Sound:** Bundled hatch, exit, six skill acknowledgement, and win/loss samples at their original pitch and timing; synthesized digging and splash effects, plus hatch/exit fallbacks. Voices are limited to avoid overlap; result sounds follow the last voice. The Sound toggle persists between visits.
 - **Visual feedback:** Animated lemmings, water and goals, plus valid/invalid terrain and skill-target highlights. The canvas scales to fit the viewport; interactive camera pan and zoom are not implemented.
 
 ### Editor and Sharing

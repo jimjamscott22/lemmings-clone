@@ -46,7 +46,9 @@ Gameplay freezes while the guide is open and its keyboard focus stays inside the
 
 ## Sound
 
-The hatch opening, successful digging (including the Dig tool, Basher, and Miner), and entering water play short Web Audio effects. Reaching the goal triggers a high-pitched spoken **“Yippie!”** using an available English browser speech voice, with a two-note celebration as the fallback when no voice is available or speech fails. Voices vary by browser.
+The first lemming released from the hatch says **“Let's go!”**. Successfully assigning Climber, Floater, Bomber, Blocker, Basher, or Miner plays that skill's voice acknowledgement. Reaching the goal plays **“Yippee!”**, and finishing a level plays cheers for a win or boos for a loss. These bundled WAV samples come from the supplied game sound pack and retain their original pitch and timing. A result sound follows any voice already playing, so the last rescue isn't cut short.
+
+Digging (including the Dig tool, Basher, and Miner) and entering water keep their synthesized Web Audio effects. While samples load or if loading fails, the hatch uses its synthesized effect and a rescue uses a two-note celebration. Skill and result voices are skipped if their samples are unavailable. Crowded voice acknowledgements are dropped rather than queued, and assigning skills while paused stays silent.
 
 Sound starts after a click or key press. **Sound on / off** in the top bar mutes all output and saves the preference in this browser. Pausing, opening the guide, level select or editor, restarting, and hiding the tab stop active sounds. No sounds are queued for later, and crowd effects are limited to avoid excessive overlap during fast-forward. Old progress saves default to sound enabled.
 
