@@ -44,9 +44,10 @@ export class Grid {
     return TILE_PROPS[this.get(x, y)].solid;
   }
 
-  /** Can be dug, bashed, mined or blown up. Never true outside the map. */
-  isDiggable(x: number, y: number): boolean {
-    return TILE_PROPS[this.get(x, y)].diggable;
+  /** Directionless tools/blasts cannot remove one-way walls. Never true outside the map. */
+  isDiggable(x: number, y: number, direction?: 1 | -1): boolean {
+    const props = TILE_PROPS[this.get(x, y)];
+    return props.diggable && (props.digDirection === undefined || props.digDirection === direction);
   }
 
   /** Subscribe to tile changes. Returns an unsubscribe function. */

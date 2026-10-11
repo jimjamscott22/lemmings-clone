@@ -23,6 +23,22 @@ export function drawStaticTile(ctx: CanvasRenderingContext2D, grid: Grid, x: num
     case TileType.Dirt:
       drawDirt(ctx, grid, x, y, px, py);
       break;
+    case TileType.Steel:
+      // Dirt-like at first glance, with metallic flecks warning that it cannot be cut.
+      drawDirt(ctx, grid, x, y, px, py);
+      ctx.fillStyle = PALETTE.wallLight;
+      for (const [dx, dy] of [[3, 5], [10, 3], [7, 11]] as const) ctx.fillRect(px + dx, py + dy, 2, 2);
+      ctx.fillStyle = PALETTE.wallDark;
+      ctx.fillRect(px, py + T - 2, T, 2);
+      break;
+    case TileType.OneWayLeft:
+    case TileType.OneWayRight:
+      drawDirt(ctx, grid, x, y, px, py);
+      drawArrow(ctx, px, py, grid.get(x, y) === TileType.OneWayRight ? 1 : -1);
+      break;
+    case TileType.Spikes:
+      drawSpikes(ctx, px, py);
+      break;
     case TileType.Wall:
       drawWall(ctx, px, py);
       break;
@@ -32,6 +48,31 @@ export function drawStaticTile(ctx: CanvasRenderingContext2D, grid: Grid, x: num
     default:
       // Empty / animated tiles leave the static layer transparent.
       break;
+  }
+}
+
+function drawArrow(ctx: CanvasRenderingContext2D, px: number, py: number, direction: 1 | -1): void {
+  const cy = py + Math.floor(T / 2);
+  ctx.fillStyle = PALETTE.wallDark;
+  ctx.fillRect(px + 2, cy - 4, T - 4, 9);
+  ctx.fillStyle = PALETTE.oneWayArrow;
+  ctx.fillRect(px + 4, cy, T - 8, 1);
+  const tip = direction === 1 ? px + T - 4 : px + 3;
+  for (let i = 0; i < 4; i++) {
+    ctx.fillRect(tip - direction * i, cy - i, 1, 1);
+    ctx.fillRect(tip - direction * i, cy + i, 1, 1);
+  }
+}
+
+function drawSpikes(ctx: CanvasRenderingContext2D, px: number, py: number): void {
+  ctx.fillStyle = PALETTE.wallDark;
+  ctx.fillRect(px, py + T - 3, T, 3);
+  for (let x = 2; x < T; x += 5) {
+    for (let row = 0; row < T - 3; row++) {
+      const half = Math.min(2, Math.floor(row / 3));
+      ctx.fillStyle = row < 5 ? PALETTE.spikes : PALETTE.wall;
+      ctx.fillRect(px + x - half, py + row, half * 2 + 1, 1);
+    }
   }
 }
 
@@ -95,7 +136,7 @@ function drawBridge(ctx: CanvasRenderingContext2D, px: number, py: number): void
   }
 }
 
-/** Water and goal tiles: drawn every frame with a time parameter (seconds). */
+/** Water, lava and goal tiles: drawn every frame with a time parameter (seconds). */
 export function drawAnimatedTile(
   ctx: CanvasRenderingContext2D,
   grid: Grid,
@@ -105,7 +146,29 @@ export function drawAnimatedTile(
 ): void {
   const tile = grid.get(x, y);
   if (tile === TileType.Water) drawWater(ctx, grid, x, y, time);
+  else if (tile === TileType.Lava) drawLava(ctx, grid, x, y, time);
   else if (tile === TileType.Goal) drawGoal(ctx, x, y, time);
+}
+
+function drawLava(ctx: CanvasRenderingContext2D, grid: Grid, x: number, y: number, time: number): void {
+  const px = x * T;
+  const py = y * T;
+  const surface = grid.get(x, y - 1) !== TileType.Lava;
+  ctx.fillStyle = surface ? PALETTE.lava : PALETTE.lavaDeep;
+  ctx.fillRect(px, py, T, T);
+  ctx.fillStyle = PALETTE.lavaGlow;
+  if (surface) {
+    for (let i = 0; i < T; i++) {
+      const height = Math.round(1.5 + Math.sin((px + i) * 0.4 + time * 3) * 1.5);
+      ctx.fillRect(px + i, py + height, 1, 2);
+    }
+  }
+  // Slow moving bright pockets give the lava a different rhythm from water.
+  for (let i = 0; i < 3; i++) {
+    const dx = Math.floor(hash(x, y, i) * (T - 3));
+    const dy = 4 + Math.floor((hash(x, y, i + 4) * (T - 7) + time * 2) % (T - 7));
+    ctx.fillRect(px + dx, py + dy, 3, 1);
+  }
 }
 
 function drawWater(ctx: CanvasRenderingContext2D, grid: Grid, x: number, y: number, time: number): void {

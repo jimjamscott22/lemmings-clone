@@ -8,8 +8,11 @@ import { TILE_PROPS, TileType } from "../world/TileType";
 /** What the pencil and fill tools paint: a tile type, or the spawn hatch. */
 export type Brush = TileType | "spawn";
 
-/** Every brush, in palette order: each tile type as declared in `TileType`, then the hatch. */
-export const BRUSHES: readonly Brush[] = [...Object.values(TileType), "spawn"];
+/** Preserve the original seven brush shortcuts; append new terrain after the hatch. */
+export const BRUSHES: readonly Brush[] = [
+  ...Object.values(TileType).filter((tile) => tile <= TileType.Goal), "spawn",
+  ...Object.values(TileType).filter((tile) => tile > TileType.Goal),
+];
 
 export function brushName(brush: Brush): string {
   return brush === "spawn" ? "Hatch" : TILE_PROPS[brush].name;

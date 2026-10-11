@@ -24,6 +24,11 @@ export const PALETTE = {
   water: "#1d6fd8",
   waterDeep: "#123f8a",
   waterFoam: "#a5d8ff",
+  lava: "#dc3918",
+  lavaDeep: "#8f1d12",
+  lavaGlow: "#ffbf47",
+  oneWayArrow: "#fde68a",
+  spikes: "#d1d5db",
 
   goal: "#facc15",
   goalGlow: "rgba(250,204,21,0.35)",
@@ -46,4 +51,9 @@ export const TILE_SWATCH: Readonly<Record<TileType, string>> = {
   [TileType.Wall]: PALETTE.wall,
   [TileType.Bridge]: PALETTE.bridge,
   [TileType.Goal]: PALETTE.goal,
+  [TileType.Steel]: PALETTE.dirtDark,
+  [TileType.OneWayLeft]: PALETTE.dirt,
+  [TileType.OneWayRight]: PALETTE.dirt,
+  [TileType.Lava]: PALETTE.lava,
+  [TileType.Spikes]: PALETTE.spikes,
 };

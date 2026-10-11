@@ -45,6 +45,11 @@ export const LEGEND: Readonly<Record<string, TileType>> = {
   X: TileType.Wall,
   "=": TileType.Bridge,
   G: TileType.Goal,
+  H: TileType.Steel,
+  "<": TileType.OneWayLeft,
+  ">": TileType.OneWayRight,
+  L: TileType.Lava,
+  "^": TileType.Spikes,
   [SPAWN_CHAR]: TileType.Empty,
 };
 

@@ -4,8 +4,8 @@ import { byId } from "./Hud";
 
 export type PaintTool = "pencil" | "fill";
 
-/** Key codes for picking a brush: 1 selects the first, and so on. */
-export const BRUSH_KEYS = BRUSHES.map((_, i) => `Digit${i + 1}`);
+/** Original 1–7 shortcuts stay stable; extra brushes use 8, 9, 0, Q and W. */
+export const BRUSH_KEYS = ["Digit1", "Digit2", "Digit3", "Digit4", "Digit5", "Digit6", "Digit7", "Digit8", "Digit9", "Digit0", "KeyQ", "KeyW"];
 
 export interface EditorHandlers {
   onBrush: (brush: Brush) => void;
@@ -211,7 +211,7 @@ export class EditorPanel {
       const swatch = el("span", "inline-block size-3 rounded-sm ring-1 ring-white/20");
       swatch.style.backgroundColor = brush === "spawn" ? PALETTE.wallDark : TILE_SWATCH[brush];
       if (brush === "spawn") swatch.append(el("span", "block text-center text-[8px] leading-3 text-stone-100", "S"));
-      button.append(kbd(String(i + 1)), swatch, brushName(brush));
+      button.append(kbd(BRUSH_KEYS[i]!.replace(/^(Digit|Key)/, "")), swatch, brushName(brush));
       button.addEventListener("click", () => this.handlers.onBrush(brush));
       this.brushButtons.set(brush, button);
       brushes.append(button);
