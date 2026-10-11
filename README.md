@@ -17,6 +17,14 @@ npm test           # Vitest: physics, state machine, tools, level solvability
 npm run build      # typecheck + production build
 ```
 
+### Startup scripts
+
+Use `./start-dev.ps1` in PowerShell or `./start-dev.sh` in Bash for development with hot reload.
+
+For a production preview, run `npm run build` after making changes, then use
+`./start-preview.ps1` in PowerShell or `./start-preview.sh` in Bash. The preview
+scripts serve the existing `dist/` directory and will explain if it has not been built yet.
+
 ## Controls
 
 | Input | Action |
