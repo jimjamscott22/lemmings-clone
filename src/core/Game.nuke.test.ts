@@ -16,10 +16,11 @@ interface TestGame {
   session: { nuke: { armed: boolean }; crowd: { nuked: boolean } } | null;
 }
 
-function mountDom(): void {
-  const raw = readFileSync(resolve(import.meta.dirname, "../../index.html"), "utf8");
-  const body = raw.match(/<body[^>]*>([\s\S]*)<\/body>/i)?.[1] ?? "";
-  document.body.innerHTML = body.replace(/<script[\s\S]*?<\/script>/gi, "");
+function mountDom(raw = readFileSync(resolve(import.meta.dirname, "../../index.html"), "utf8")): void {
+  // Parse the checked-in fixture once so removing a script cannot create new markup.
+  const fixture = new DOMParser().parseFromString(raw, "text/html");
+  for (const script of fixture.querySelectorAll("script")) script.remove();
+  document.body.replaceChildren(...fixture.body.childNodes);
 }
 
 function pressKey(code: string): void {
@@ -29,6 +30,26 @@ function pressKey(code: string): void {
 function tick(game: TestGame, dt: number): void {
   game.update(dt);
 }
+
+describe("test DOM fixture", () => {
+  it.each([
+    '<script type="module" src="/src/main.ts"></script>',
+    '<ScRiPt>void 0;</ScRiPt >',
+    '<script>void 0;</script >',
+    '<scr<script></script>ipt>void 0;</script>',
+  ])("removes script nodes without reparsing filtered text: %s", (script) => {
+    mountDom(`<html><body><canvas id="game"></canvas>${script}</body></html>`);
+    expect(document.body.querySelector("script")).toBeNull();
+    expect(document.getElementById("game")).toBeInstanceOf(HTMLCanvasElement);
+  });
+
+  it("mounts the real game markup without its entry script", () => {
+    mountDom();
+    expect(document.getElementById("game")).toBeInstanceOf(HTMLCanvasElement);
+    expect(document.getElementById("hud-nuke")).not.toBeNull();
+    expect(document.body.querySelector("script")).toBeNull();
+  });
+});
 
 describe("nuke confirm while overlays are open", () => {
   let game: TestGame;
