@@ -5,7 +5,7 @@ import type { World } from "../entities/World";
 import { Input } from "../input/Input";
 import type { KeyValueStore, Progress } from "../progress/Progress";
 import { Renderer } from "../render/Renderer";
-import { ACTION_ORDER, actionInfo } from "../tools/actions";
+import { ACTION_ORDER, actionInfo, type ActionId } from "../tools/actions";
 import { NukeSwitch } from "../tools/NukeSwitch";
 import { Toolbox } from "../tools/Toolbox";
 import { byId, Hud } from "../ui/Hud";
@@ -83,15 +83,20 @@ export class Game {
       this.progress.updateSettings({ soundEnabled: enabled });
       this.audio.setEnabled(enabled);
       this.refreshSoundButton();
+      if (enabled) this.audio.play("ui-click");
     });
     this.renderer = new Renderer(canvas, viewport);
     this.input = new Input(canvas);
-    this.help = new HelpGuide(() => this.clearGuideInput());
+    this.help = new HelpGuide(() => {
+      this.clearGuideInput();
+      this.audio.stop();
+      this.audio.play("ui-close");
+    }, () => this.audio.play("ui-click"));
     byId("hud-help").addEventListener("click", () => this.openHelp());
     byId("levels-help").addEventListener("click", () => this.openHelp());
     this.hud = new Hud({
-      onSelectTool: (id) => this.session?.tools.select(id),
-      onAdjustRate: (delta) => this.session?.crowd.adjustReleaseRate(delta),
+      onSelectTool: (id) => this.selectTool(id),
+      onAdjustRate: (delta) => this.adjustRate(delta),
       onNuke: () => this.pressNuke(),
       onOpenLevels: () => this.openLevelSelect(),
       onOpenEditor: () => this.toggleEditor(),
@@ -105,7 +110,7 @@ export class Game {
     });
     this.levelSelect = new LevelSelect({
       onChoose: (index) => this.chooseLevel(index),
-      onClose: () => this.levelSelect.close(),
+      onClose: () => this.closeLevelSelect(),
       onReset: () => this.resetProgress(),
     });
     this.editor = new EditorMode({
@@ -116,6 +121,7 @@ export class Game {
       store,
       onPlaytest: (data) => this.playtest(data),
       onExit: () => this.closeEditor(),
+      onFeedback: (event) => this.audio.play(event),
     });
     byId("hud-restart").addEventListener("click", () => this.restart());
     this.showGrid = progress.settings.showGrid;
@@ -181,6 +187,7 @@ export class Game {
     this.renderer.setLevel(level);
     this.overlay.hide();
     this.levelSelect.close();
+    this.audio.play("ui-play");
   }
 
   /** Open the level editor, or leave it for the game. */
@@ -196,6 +203,7 @@ export class Game {
     this.overlay.hide();
     this.editor.enter();
     this.hud.setMode("edit");
+    this.audio.play("ui-open");
   }
 
   /**
@@ -204,6 +212,7 @@ export class Game {
    */
   closeEditor(): void {
     if (!this.editor.isOpen) return;
+    this.audio.stop();
     this.editor.leave();
     if (this.playtestData) {
       return this.trial === "link" ? this.playtest(this.playtestData, "link") : this.loadLevel(this.levelIndex);
@@ -212,6 +221,7 @@ export class Game {
     if (!this.session) return;
     this.renderer.setLevel(this.session.level);
     if (this.session.result) this.overlay.show(this.session.result);
+    this.audio.play("ui-close");
   }
 
   /** Load a level from the level select; locked levels can't be chosen. */
@@ -221,8 +231,8 @@ export class Game {
 
   /** Show the level select. The simulation is frozen while it's open. */
   openLevelSelect(): void {
-    this.audio.stop();
     this.closeEditor();
+    this.audio.stop();
     const cards = this.levels.map((data, i) => ({
       name: data.name,
       lemmingCount: data.lemmingCount,
@@ -234,6 +244,14 @@ export class Game {
     this.levelSelect.open(cards, this.levelIndex);
     // Unhandled presses (e.g. an Esc during play) are still queued; don't let them close it at once.
     this.input.clearPresses();
+    this.audio.play("ui-open");
+  }
+
+  private closeLevelSelect(): void {
+    if (!this.levelSelect.isOpen) return;
+    this.levelSelect.close();
+    this.audio.stop();
+    this.audio.play("ui-close");
   }
 
   private get levelNames(): string[] {
@@ -270,6 +288,7 @@ export class Game {
     this.audio.stop();
     this.clearGuideInput();
     this.help.open();
+    this.audio.play("ui-open");
   }
 
   private clearGuideInput(): void {
@@ -391,7 +410,7 @@ export class Game {
 
   /** While the level select is open, only Esc / L (close) count; everything else is dropped. */
   private handleLevelSelectInput(): void {
-    if (this.input.consumePress("Escape") || this.input.consumePress("KeyL")) this.levelSelect.close();
+    if (this.input.consumePress("Escape") || this.input.consumePress("KeyL")) this.closeLevelSelect();
     this.input.clearPresses();
     this.input.consumeStroke();
     this.input.consumeClicks();
@@ -411,6 +430,7 @@ export class Game {
     if (!this.input.consumePress("KeyG")) return;
     this.showGrid = !this.showGrid;
     this.progress.updateSettings({ showGrid: this.showGrid });
+    this.audio.play("ui-click");
   }
 
   private handleKeys(): void {
@@ -424,14 +444,16 @@ export class Game {
     if (this.input.consumePress("KeyF")) {
       this.fast = !this.fast;
       this.hud.setFast(this.fast);
+      this.audio.play("ui-click");
     }
     if (this.input.consumePress("Space")) {
       this.paused = !this.paused;
       if (this.paused) this.audio.stop();
       this.hud.setPaused(this.paused);
+      this.audio.play("ui-click");
     }
     for (const id of ACTION_ORDER) {
-      if (this.input.consumePress(actionInfo(id).key)) this.session?.tools.select(id);
+      if (this.input.consumePress(actionInfo(id).key)) this.selectTool(id);
     }
   }
 
@@ -439,14 +461,32 @@ export class Game {
   private pressNuke(): void {
     const session = this.session;
     if (!session || session.outcome || this.levelSelect.isOpen || session.crowd.nuked) return;
-    if (session.nuke.press()) session.crowd.nuke();
+    if (session.nuke.press()) {
+      session.crowd.nuke();
+      this.audio.stop();
+      this.audio.play("nuke");
+    } else this.audio.play("ui-click");
+  }
+
+  private selectTool(id: ActionId): void {
+    if (!this.session) return;
+    this.session.tools.select(id);
+    this.audio.play("ui-click");
+  }
+
+  private adjustRate(delta: number): void {
+    const session = this.session;
+    if (!session || session.outcome) return;
+    const before = session.crowd.releaseRate;
+    session.crowd.adjustReleaseRate(delta);
+    if (session.crowd.releaseRate !== before) this.audio.play("ui-click");
   }
 
   /**
    * +/- nudge the release rate by one per tap; holding auto-repeats after a short delay.
    * Works while paused, like terrain editing. `dt` is real (not fast-forwarded) time.
    */
-  private handleReleaseRate({ crowd, outcome }: Session, dt: number): void {
+  private handleReleaseRate({ outcome }: Session, dt: number): void {
     // Always drain presses, so a tap during the result screen doesn't carry over.
     const taps =
       RATE_UP_KEYS.filter((k) => this.input.consumePress(k)).length -
@@ -454,7 +494,7 @@ export class Game {
     const dir =
       Number(RATE_UP_KEYS.some((k) => this.input.isDown(k))) - Number(RATE_DOWN_KEYS.some((k) => this.input.isDown(k)));
     if (outcome) return;
-    if (taps) crowd.adjustReleaseRate(taps);
+    if (taps) this.adjustRate(taps);
 
     if (dir === 0) {
       this.rateHeldFor = 0;
@@ -466,7 +506,7 @@ export class Game {
     this.rateCarry += dt * RELEASE_RATE_HOLD_SPEED;
     const steps = Math.floor(this.rateCarry);
     this.rateCarry -= steps;
-    if (steps) crowd.adjustReleaseRate(dir * steps);
+    if (steps) this.adjustRate(dir * steps);
   }
 
   /**
@@ -481,7 +521,9 @@ export class Game {
     if (tools.selectedSkill) {
       for (const p of clicks) {
         const target = crowd.lemmingAt(p, (l) => tools.canAssign(l));
-        if (target && tools.assign(target, world) && !this.paused) this.audio.play(tools.selectedSkill.id);
+        if (!target) continue;
+        const assigned = tools.assign(target, world);
+        if (!this.paused) this.audio.play(assigned ? tools.selectedSkill.id : "reject");
       }
       return;
     }

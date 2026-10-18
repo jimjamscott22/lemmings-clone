@@ -33,7 +33,10 @@ export const falling: LemmingState = {
     l.y = ny;
 
     // Out the bottom of the map: lost to the void.
-    if (l.y - LEMMING_HEIGHT > grid.rows * TILE_SIZE) l.retire("lost");
+    if (l.y - LEMMING_HEIGHT > grid.rows * TILE_SIZE) {
+      world.onEvent?.("fall");
+      l.retire("lost");
+    }
   },
 };
 

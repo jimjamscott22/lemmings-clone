@@ -10,8 +10,19 @@ import basherUrl from "./assets/BASHER2.wav?url";
 import minerUrl from "./assets/MINER2.wav?url";
 import cheersUrl from "./assets/CHEERS1.wav?url";
 import boosUrl from "./assets/BOOS.wav?url";
+import drownUrl from "./assets/DROWN1.wav?url";
+import fallUrl from "./assets/FALLER3.wav?url";
+import warningUrl from "./assets/OHNO1.wav?url";
+import nukeUrl from "./assets/GEDDON1.wav?url";
+import rejectUrl from "./assets/UH_UH1.wav?url";
+import playUrl from "./assets/PLAY.wav?url";
+import menuUrl from "./assets/OPTIONS.wav?url";
+import closeUrl from "./assets/EXIT.wav?url";
+import clickUrl from "./assets/HUP3.wav?url";
 
-type AudioEvent = SimulationEvent | SkillId | "won" | "lost";
+export type UiAudioEvent = "ui-click" | "ui-open" | "ui-close" | "ui-play";
+type AudioEvent = SimulationEvent | SkillId | UiAudioEvent | "nuke" | "reject" | "won" | "lost";
+const isUiEvent = (event: AudioEvent): event is UiAudioEvent => event.startsWith("ui-");
 type SampleEvent = Exclude<AudioEvent, "dig" | "splash">;
 
 const SAMPLE_URLS: Record<SampleEvent, string> = {
@@ -19,11 +30,15 @@ const SAMPLE_URLS: Record<SampleEvent, string> = {
   climber: climberUrl, floater: floaterUrl, bomber: bomberUrl,
   blocker: blockerUrl, basher: basherUrl, miner: minerUrl,
   won: cheersUrl, lost: boosUrl,
+  drown: drownUrl, fall: fallUrl, warning: warningUrl, nuke: nukeUrl, reject: rejectUrl,
+  "ui-click": clickUrl, "ui-open": menuUrl, "ui-close": closeUrl, "ui-play": playUrl,
 };
 const COOLDOWN: Record<AudioEvent, number> = {
   hatch: 0.3, dig: 0.08, splash: 0.12, exit: 0.8,
   climber: 0.3, floater: 0.3, bomber: 0.3, blocker: 0.3, basher: 0.3, miner: 0.3,
   won: 1, lost: 1,
+  drown: 0.8, fall: 0.8, warning: 0.8, nuke: 1, reject: 0.5,
+  "ui-click": 0.12, "ui-open": 0.25, "ui-close": 0.25, "ui-play": 0.25,
 };
 
 /** Browser-only sound output. Simulation events never depend on audio being available. */
@@ -37,10 +52,8 @@ export class GameAudio {
   private voiceSource: AudioBufferSourceNode | null = null;
   private voiceEvent: SampleEvent | null = null;
   private voiceEndsAt = 0;
-  private readonly played: Record<AudioEvent, number> = {
-    hatch: 0, dig: 0, splash: 0, exit: 0,
-    climber: 0, floater: 0, bomber: 0, blocker: 0, basher: 0, miner: 0, won: 0, lost: 0,
-  };
+  private uiSource: AudioBufferSourceNode | null = null;
+  private readonly played = Object.fromEntries(Object.keys(COOLDOWN).map((event) => [event, 0])) as Record<AudioEvent, number>;
   private exitVoice: "sample" | "chirp" | null = null;
 
   constructor(private enabled: boolean) {
@@ -76,15 +89,15 @@ export class GameAudio {
 
   private loadSamples(context: AudioContext): void {
     this.samplesLoad ??= (async () => {
-      for (const event of Object.keys(SAMPLE_URLS) as SampleEvent[]) {
+      await Promise.all((Object.keys(SAMPLE_URLS) as SampleEvent[]).map(async (event) => {
         try {
           const response = await fetch(SAMPLE_URLS[event]);
-          if (!response.ok) continue;
+          if (!response.ok) return;
           this.sampleBuffers.set(event, await context.decodeAudioData(await response.arrayBuffer()));
         } catch {
           // Prepare samples only; late loading never replays a stopped event.
         }
-      }
+      }));
     })();
   }
 
@@ -94,8 +107,13 @@ export class GameAudio {
     const now = context.currentTime;
     if (now - (this.lastPlayed.get(event) ?? -Infinity) < COOLDOWN[event]) return;
     if (this.sources.size + 2 > 8) return; // Each effect uses at most two sources.
-    this.lastPlayed.set(event, now);
     try {
+      if (isUiEvent(event)) {
+        this.ui(event);
+        this.lastPlayed.set(event, now);
+        this.played[event]++;
+        return;
+      }
       switch (event) {
         case "hatch":
           if (this.sampleBuffers.has("hatch")) {
@@ -124,6 +142,7 @@ export class GameAudio {
           if (!this.sample(event)) return;
           break;
       }
+      this.lastPlayed.set(event, now);
       this.played[event]++;
     } catch {
       // Device changes or unavailable audio output should stay silent, not break gameplay.
@@ -132,6 +151,7 @@ export class GameAudio {
 
   /** Drop active output and cooldowns. Nothing is queued for resume or the next level. */
   stop(): void {
+    this.uiSource = null;
     this.voiceSource = null;
     this.voiceEvent = null;
     this.voiceEndsAt = 0;
@@ -152,6 +172,7 @@ export class GameAudio {
       exitPlaying: this.voiceEvent === "exit",
       sampleReady: this.sampleBuffers.has("exit"),
       voicePlaying: this.voiceEvent,
+      uiPlaying: this.uiSource !== null,
       loadedSamples: [...this.sampleBuffers.keys()],
       exitVoice: this.exitVoice,
       played: { ...this.played },
@@ -208,6 +229,33 @@ export class GameAudio {
     if (this.sources.size + 2 > 8) return;
     this.tone(660, 880, 0.12, 0.12, "triangle");
     this.tone(880, 1320, 0.22, 0.1, "sine", 0.12);
+  }
+
+  /** UI feedback has its own quiet lane, so it cannot block gameplay voices or queue clicks. */
+  private ui(event: UiAudioEvent): void {
+    const context = this.context!;
+    if (this.uiSource) {
+      this.uiSource.stop();
+      this.uiSource = null;
+    }
+    const buffer = this.sampleBuffers.get(event);
+    if (!buffer) {
+      // The first gesture may arrive before decoding finishes. Never replay it later.
+      const down = event === "ui-close";
+      this.tone(down ? 600 : 400, down ? 400 : 600, event === "ui-click" ? 0.04 : 0.09, 0.035, "sine");
+      return;
+    }
+    const source = context.createBufferSource();
+    const gain = context.createGain();
+    source.buffer = buffer;
+    gain.gain.value = event === "ui-click" ? 0.16 : 0.3;
+    source.connect(gain).connect(context.destination);
+    this.track(source, gain);
+    source.addEventListener("ended", () => {
+      if (this.uiSource === source) this.uiSource = null;
+    }, { once: true });
+    source.start();
+    this.uiSource = source;
   }
 
   private sample(event: SampleEvent): boolean {

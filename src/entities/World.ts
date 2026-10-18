@@ -3,7 +3,7 @@ import type { Grid } from "../world/Grid";
 import type { Lemming } from "./Lemming";
 
 /** Optional presentation events; headless simulations don't need a listener. */
-export type SimulationEvent = "hatch" | "dig" | "splash" | "exit";
+export type SimulationEvent = "hatch" | "dig" | "splash" | "exit" | "drown" | "fall" | "warning";
 
 /** What a lemming state can see and change while it updates. */
 export interface World {

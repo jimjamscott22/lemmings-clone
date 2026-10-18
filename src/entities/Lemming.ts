@@ -84,6 +84,7 @@ export class Lemming {
     this.state.enter?.(this, world);
     if (name === "swimming") world.onEvent?.("splash");
     else if (name === "exiting") world.onEvent?.("exit");
+    else if (name === "splatting") world.onEvent?.("fall");
   }
 
   update(world: World, dt: number): void {
@@ -109,7 +110,9 @@ export class Lemming {
   /** Count down a bomber's fuse; returns true if it went off. Reaching the exit defuses it. */
   private tickFuse(world: World, dt: number): boolean {
     if (this.fuse === null || this.state.name === "exiting") return false;
+    const before = this.fuse;
     this.fuse -= dt;
+    if (before > 1 && this.fuse <= 1 && this.fuse > 0) world.onEvent?.("warning");
     if (this.fuse > 0) return false;
     blast(world.grid, this.x, this.y - TILE_SIZE / 2);
     this.retire("lost");

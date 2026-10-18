@@ -22,6 +22,7 @@ export const swimming: LemmingState = {
     const { grid } = world;
 
     if (isDrowning(l)) {
+      if (l.stateTime - dt < SWIM_ENDURANCE) world.onEvent?.("drown");
       l.y += (TILE_SIZE / DROWN_TIME) * dt * 0.5;
       if (l.stateTime >= SWIM_ENDURANCE + DROWN_TIME) l.retire("lost");
       return;

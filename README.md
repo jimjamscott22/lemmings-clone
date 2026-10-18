@@ -56,9 +56,13 @@ Gameplay freezes while the guide is open and its keyboard focus stays inside the
 
 The first lemming released from the hatch says **“Let's go!”**. Successfully assigning Climber, Floater, Bomber, Blocker, Basher, or Miner plays that skill's voice acknowledgement. Reaching the goal plays **“Yippee!”**, and finishing a level plays cheers for a win or boos for a loss. These bundled WAV samples come from the supplied game sound pack and retain their original pitch and timing. A result sound follows any voice already playing, so the last rescue isn't cut short.
 
-Digging (including the Dig tool, Basher, and Miner) and entering water keep their synthesized Web Audio effects. While samples load or if loading fails, the hatch uses its synthesized effect and a rescue uses a two-note celebration. Skill and result voices are skipped if their samples are unavailable. Crowded voice acknowledgements are dropped rather than queued, and assigning skills while paused stays silent.
+Drowning plays a voice once a swimmer's endurance runs out; fatal landings and falls out of the map play a falling cry. Bombers say **“Oh no!”** once in the final second of their fuse. Confirming a nuke stops the current sounds and plays its own voice. Clicking a lemming that cannot accept the selected skill plays a rejection cue; empty-space clicks stay silent.
 
-Sound starts after a click or key press. **Sound on / off** in the top bar mutes all output and saves the preference in this browser. Pausing, opening the guide, level select or editor, restarting, and hiding the tab stop active sounds. No sounds are queued for later, and crowd effects are limited to avoid excessive overlap during fast-forward. Old progress saves default to sound enabled.
+Starting or retrying a level, opening and closing menus, selecting tools, adjusting release rate, and editor buttons also use the sound pack. Keyboard shortcuts share the same feedback as buttons. UI sounds play quietly in a separate lane and repeated clicks are limited, so they cannot block gameplay voices. Paused gameplay stays silent, while deliberate UI actions still give feedback.
+
+Digging (including the Dig tool, Basher, and Miner) and entering water keep their synthesized Web Audio effects. While samples load or if loading fails, the hatch uses its synthesized effect and a rescue uses a two-note celebration. Other gameplay voices are skipped if their samples are unavailable. UI actions use a short synthesized cue while their samples load or if loading fails. Crowded voice acknowledgements are dropped rather than queued, and assigning skills while paused stays silent.
+
+Sound starts after a click or key press. **Sound on / off** in the top bar mutes all output and saves the preference in this browser. Pausing, opening the guide, level select or editor, restarting, hiding the tab, and leaving the window stop active gameplay sounds and scheduled results; the control or menu action then plays its own UI cue. No sounds are queued for later, and crowd effects are limited to avoid excessive overlap during fast-forward. Old progress saves default to sound enabled.
 
 ## Progress
 
