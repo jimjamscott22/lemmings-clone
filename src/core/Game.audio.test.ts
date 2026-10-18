@@ -48,14 +48,9 @@ describe("game audio controls", () => {
 
   beforeEach(() => {
     const html = readFileSync(resolve(import.meta.dirname, "../../index.html"), "utf8");
-    const bodyHtml = html.match(/<body[^>]*>([\s\S]*)<\/body>/i)![1]!;
-    let sanitizedBodyHtml = bodyHtml;
-    let previousBodyHtml: string;
-    do {
-      previousBodyHtml = sanitizedBodyHtml;
-      sanitizedBodyHtml = sanitizedBodyHtml.replace(/<script[\s\S]*?<\/script>/gi, "");
-    } while (sanitizedBodyHtml !== previousBodyHtml);
-    document.body.innerHTML = sanitizedBodyHtml;
+    const parsed = new DOMParser().parseFromString(html, "text/html");
+    parsed.body.querySelectorAll("script").forEach((script) => script.remove());
+    document.body.innerHTML = parsed.body.innerHTML;
     vi.stubGlobal("Option", function Option(text: string, value: string) {
       const option = document.createElement("option");
       option.text = text;
