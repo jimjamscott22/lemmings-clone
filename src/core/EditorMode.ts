@@ -1,3 +1,4 @@
+import type { UiAudioEvent } from "../audio/GameAudio";
 import { loadDraft, saveDraft } from "../editor/draftStore";
 import { BRUSHES, LevelDraft, type Brush } from "../editor/LevelDraft";
 import { shareUrl } from "../editor/levelShare";
@@ -39,17 +40,18 @@ export class EditorMode {
       store: KeyValueStore | null;
       onPlaytest: (data: LevelData) => void;
       onExit: () => void;
+      onFeedback: (event: UiAudioEvent) => void;
     },
   ) {
     this.draft = new LevelDraft(loadDraft(deps.store) ?? undefined);
     this.panel = new EditorPanel(
       {
-        onBrush: (brush) => this.edit(() => (this.brush = brush)),
-        onTool: (tool) => this.edit(() => (this.tool = tool)),
-        onResize: (cols, rows) => this.edit(() => this.draft.resize(cols, rows), true),
-        onUndo: () => this.edit(() => this.draft.undo(), true),
-        onRedo: () => this.edit(() => this.draft.redo(), true),
-        onClear: () => this.edit(() => this.draft.clear(), true),
+        onBrush: (brush) => this.control(() => (this.brush = brush)),
+        onTool: (tool) => this.control(() => (this.tool = tool)),
+        onResize: (cols, rows) => this.control(() => this.draft.resize(cols, rows), true),
+        onUndo: () => this.control(() => this.draft.undo(), true),
+        onRedo: () => this.control(() => this.draft.redo(), true),
+        onClear: () => this.control(() => this.draft.clear(), true),
         onName: (name) => this.edit(() => (this.draft.name = name), true),
         onNumber: (id, value) => this.edit(() => this.draft.setNumber(id, value), true),
         onTemplate: (index) => this.useTemplate(index),
@@ -58,6 +60,7 @@ export class EditorMode {
         exportText: () => this.draft.toSource(),
         shareLink: () => shareUrl(location.href, this.draft.toLevelData()),
         onImport: (text) => this.importText(text),
+        onFeedback: deps.onFeedback,
       },
       deps.levels.map((l) => l.name),
     );
@@ -120,6 +123,7 @@ export class EditorMode {
     if (undo) persist = undo.shift ? this.draft.redo() : this.draft.undo();
     else if (redo) persist = this.draft.redo();
     changed ||= persist;
+    if (changed) this.deps.onFeedback("ui-click");
 
     for (const tile of input.consumeStroke()) {
       changed = true;
@@ -179,6 +183,11 @@ export class EditorMode {
     this.refresh(persist);
   }
 
+  private control(change: () => unknown, persist = false): void {
+    this.edit(change, persist);
+    this.deps.onFeedback("ui-click");
+  }
+
   /** Put the draft's state on screen: a new grid or hatch position for the renderer, and the panel. */
   private refresh(persist: boolean): void {
     if (this.draft.grid !== this.shownGrid) this.showScene();
@@ -211,7 +220,7 @@ export class EditorMode {
     if (!confirm("Replace the level in the editor? The map can be undone, but the name and numbers can't.")) return;
     const source = index === null ? new LevelDraft().toLevelData() : this.deps.levels[index]!;
     const data = index === null ? source : { ...source, name: `Copy of ${source.name}` };
-    this.edit(() => this.draft.replaceWith(data), true);
+    this.control(() => this.draft.replaceWith(data), true);
   }
 
   /** Load pasted text. Returns an error message to show, or null on success. */

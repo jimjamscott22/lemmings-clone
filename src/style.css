@@ -1,5 +1,13 @@
 @import "tailwindcss";
 
+@font-face {
+  font-family: "Silkscreen";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./assets/fonts/Silkscreen-Regular.ttf") format("truetype");
+}
+
 @theme {
   --font-pixel: "Silkscreen", ui-monospace, monospace;
 }

@@ -1,3 +1,4 @@
+import type { UiAudioEvent } from "../audio/GameAudio";
 import { BRUSHES, brushName, DRAFT_FIELDS, GRID_LIMITS, type Brush, type FieldId, type LevelDraft } from "../editor/LevelDraft";
 import { PALETTE, TILE_SWATCH } from "../render/palette";
 import { byId } from "./Hud";
@@ -8,6 +9,7 @@ export type PaintTool = "pencil" | "fill";
 export const BRUSH_KEYS = ["Digit1", "Digit2", "Digit3", "Digit4", "Digit5", "Digit6", "Digit7", "Digit8", "Digit9", "Digit0", "KeyQ", "KeyW"];
 
 export interface EditorHandlers {
+  onFeedback: (event: UiAudioEvent) => void;
   onBrush: (brush: Brush) => void;
   onTool: (tool: PaintTool) => void;
   onResize: (cols: number, rows: number) => void;
@@ -151,15 +153,19 @@ export class EditorPanel {
     this.io.classList.replace("hidden", "flex");
     this.ioText.focus();
     this.ioText.select();
+    this.handlers.onFeedback("ui-open");
   }
 
-  closeIo(): void {
+  closeIo(feedback = false): void {
+    const wasOpen = this.ioOpen;
     this.io.classList.replace("flex", "hidden");
+    if (feedback && wasOpen) this.handlers.onFeedback("ui-close");
   }
 
   private buildIo(): void {
-    byId("editor-io-close").addEventListener("click", () => this.closeIo());
+    byId("editor-io-close").addEventListener("click", () => this.closeIo(true));
     byId("editor-io-copy").addEventListener("click", async () => {
+      this.handlers.onFeedback("ui-click");
       this.ioText.value = this.handlers.exportText();
       try {
         await navigator.clipboard.writeText(this.ioText.value);
@@ -173,19 +179,21 @@ export class EditorPanel {
       const error = this.handlers.onImport(this.ioText.value);
       if (error) {
         this.ioStatus.textContent = error;
+        this.handlers.onFeedback("ui-click");
       } else {
-        this.closeIo();
+        this.closeIo(true);
       }
     });
     this.io.addEventListener("keydown", (e) => {
       if (e.key !== "Escape") return;
       e.stopPropagation(); // closes the box only; the same press must not also leave the editor
-      this.closeIo();
+      this.closeIo(true);
     });
   }
 
   /** Copy the share link; if the clipboard is out of reach, show it for the player to copy by hand. */
   private async share(): Promise<void> {
+    this.handlers.onFeedback("ui-click");
     const link = this.handlers.shareLink();
     try {
       await navigator.clipboard.writeText(link);

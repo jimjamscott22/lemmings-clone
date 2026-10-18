@@ -5,7 +5,7 @@ import { byId } from "./Hud";
 export class HelpGuide {
   private readonly root = byId<HTMLDialogElement>("help");
 
-  constructor(private readonly onClose: () => void) {
+  constructor(private readonly onClose: () => void, onNavigate: () => void = () => {}) {
     byId("help-content").innerHTML = guideContent();
     this.root.querySelectorAll<HTMLAnchorElement>(".help-nav a").forEach((link) => {
       link.addEventListener("click", (event) => {
@@ -13,6 +13,7 @@ export class HelpGuide {
         const section = byId(link.hash.slice(1));
         section.scrollIntoView({ block: "start" });
         byId("help-content").focus({ preventScroll: true });
+        onNavigate();
       });
     });
     byId("help-close").addEventListener("click", () => this.close());
@@ -157,7 +158,7 @@ function guideContent(): string {
         <dt><kbd>K</kbd> twice</dt><dd>Confirm Nuke within ${NUKE_CONFIRM_TIME} seconds. Unreleased lemmings count as lost and all active lemmings get a ${BOMB_FUSE}-second fuse. Existing fuses are not reset; lemmings reaching the goal in time are still saved. Nuke cannot be undone; use R to restart.</dd>
       </dl>
       <p>The simulation is frozen while this guide or level select is open. Game shortcuts and terrain input are disabled in the guide so you can read safely.</p>
-      <p><strong>Sound on / off:</strong> the top-bar button mutes or enables all effects and remembers your choice in this browser. Sound starts after your first click or key press. Listen for “Let's go!” at the hatch, voice acknowledgements for successful skill assignments, crunchy digging, splashes, “Yippee!” at the goal, and cheers or boos when a level ends. Voices use bundled audio samples. The hatch and goal use synthesized fallbacks while their samples load or if loading fails. Crowded voices and rapid digging are limited to keep sounds from piling up; result sounds follow a voice already playing. Assigning skills while paused stays silent. Pausing, opening a menu or the editor, and restarting stop active and scheduled sounds; they are not replayed when you resume.</p>
+      <p><strong>Sound on / off:</strong> the top-bar button mutes or enables all effects and remembers your choice in this browser. Sound starts after your first click or key press. Listen for “Let's go!” at the hatch, voice acknowledgements for successful skill assignments, crunchy digging, splashes, “Yippee!” at the goal, and cheers or boos when a level ends. Drowning, fatal falls, bomber countdown warnings, confirmed nukes, and rejected skill assignments also have voice cues. Starting and retrying levels, menus, buttons, and keyboard shortcuts give quieter feedback in a separate audio lane. Voices use bundled audio samples. The hatch and goal use synthesized fallbacks while their samples load or if loading fails. Crowded voices and rapid digging are limited to keep sounds from piling up; result sounds follow a voice already playing. Assigning skills while paused stays silent; deliberate menu and control actions still give feedback. Pausing, opening a menu or the editor, and restarting stop active and scheduled gameplay sounds before any UI cue; they are not replayed when you resume.</p>
     </section>
 
     <section id="guide-extras" aria-labelledby="guide-extras-title">
