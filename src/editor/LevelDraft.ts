@@ -336,6 +336,12 @@ export class LevelDraft {
   }
 
   private applyData(data: LevelData): void {
+    if (data.map.some((row) => row.length > GRID_LIMITS.maxCols)) {
+      throw new Error(`That level is wider than the editor allows (${GRID_LIMITS.maxCols} columns).`);
+    }
+    if (data.map.length > GRID_LIMITS.maxRows) {
+      throw new Error(`That level is taller than the editor allows (${GRID_LIMITS.maxRows} rows).`);
+    }
     // Parse first: a malformed map throws before anything has changed.
     const { grid, spawn } = parseMap(data);
     this.name = data.name;

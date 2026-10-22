@@ -1,5 +1,6 @@
 import type { KeyValueStore } from "../progress/Progress";
-import { parseMap, type LevelData } from "../world/Level";
+import type { LevelData } from "../world/Level";
+import { LevelDraft } from "./LevelDraft";
 import { coerceLevelData } from "./levelText";
 
 export const DRAFT_KEY = "lemmings-clone:editor-draft";
@@ -10,7 +11,7 @@ export function loadDraft(store: KeyValueStore | null): LevelData | null {
     const raw = store?.getItem(DRAFT_KEY);
     if (!raw) return null;
     const data = coerceLevelData(JSON.parse(raw));
-    parseMap(data); // a draft that no longer parses is as good as none
+    new LevelDraft(data); // discard drafts that no longer parse or exceed the editor's limits
     return data;
   } catch {
     return null;
