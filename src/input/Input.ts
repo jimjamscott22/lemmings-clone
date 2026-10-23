@@ -106,6 +106,15 @@ export class Input {
     this.chords.clear();
   }
 
+  /** Discard input and ongoing gestures from the session being replaced. */
+  reset(): void {
+    this.clearPresses();
+    this.held.clear();
+    this.pointerDown = false;
+    this.strokeQueue.length = 0;
+    this.clickQueue.length = 0;
+  }
+
   /** True while the key is held down. */
   isDown(code: string): boolean {
     return this.held.has(code);

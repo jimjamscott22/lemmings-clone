@@ -6,8 +6,8 @@ import { parseLevel, type LevelData } from "../world/Level";
 import { LEVELS } from "../world/levels";
 import { TileType } from "../world/TileType";
 import { DRAFT_KEY, loadDraft, saveDraft } from "./draftStore";
-import { LevelDraft } from "./LevelDraft";
-import { shareUrl } from "./levelShare";
+import { GRID_LIMITS, LevelDraft } from "./LevelDraft";
+import { decodeLevel, encodeLevel, shareUrl } from "./levelShare";
 import { parseLevelText } from "./levelText";
 
 const rows = (d: LevelDraft) => d.toLevelData().map;
@@ -289,6 +289,29 @@ describe("export and import", () => {
     expect(d.name).toBe("Flat");
     expect(rows(d)).toEqual(FLAT.map);
   });
+
+  it.each([
+    [GRID_LIMITS.maxCols + 1, 6, /wider/],
+    [8, GRID_LIMITS.maxRows + 1, /taller/],
+  ] as const)("rejects a %i × %i import without changing the draft or history", (cols, height, error) => {
+    const map = Array.from({ length: height }, (_, y) => y === 0 ? `S${".".repeat(cols - 2)}G` : ".".repeat(cols));
+    const data = parseLevelText(JSON.stringify({ ...FLAT, name: "Oversized", map }));
+    const d = new LevelDraft(FLAT);
+    expect(() => d.replaceWith(data)).toThrow(error);
+    expect(d.toLevelData()).toEqual(FLAT);
+    expect(d.canUndo).toBe(false);
+    expect(() => new LevelDraft(data)).toThrow(error);
+  });
+
+  it("accepts a maximum-size import that can be shared", () => {
+    const map = Array.from({ length: GRID_LIMITS.maxRows }, (_, y) =>
+      y === 0 ? `S${".".repeat(GRID_LIMITS.maxCols - 2)}G` : ".".repeat(GRID_LIMITS.maxCols),
+    );
+    const d = new LevelDraft(FLAT);
+    d.replaceWith(parseLevelText(JSON.stringify({ ...FLAT, map })));
+    expect(d.problems()).toEqual([]);
+    expect(decodeLevel(encodeLevel(d.toLevelData()))).toEqual(d.toLevelData());
+  });
 });
 
 describe("a drawn level", () => {
@@ -409,6 +432,14 @@ describe("draft storage", () => {
     expect(loadDraft(null)).toBeNull();
     for (const bad of ["{oops", "[]", '{"map":["..","..."]}', '{"map":[1]}']) {
       store.setItem(DRAFT_KEY, bad);
+      expect(loadDraft(store)).toBeNull();
+    }
+  });
+
+  it("discards oversized saved drafts so they cannot prevent the game from loading", () => {
+    const store = memory();
+    for (const map of [[".".repeat(GRID_LIMITS.maxCols + 1)], Array(GRID_LIMITS.maxRows + 1).fill("........")]) {
+      store.setItem(DRAFT_KEY, JSON.stringify({ ...FLAT, map }));
       expect(loadDraft(store)).toBeNull();
     }
   });

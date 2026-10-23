@@ -172,6 +172,9 @@ export class Game {
   private startSession(data: LevelData): void {
     this.audio.stop();
     this.help.close();
+    this.input.reset();
+    this.rateHeldFor = 0;
+    this.rateCarry = 0;
     const level = parseLevel(data);
     const crowd = new Crowd(level);
     this.session = {
@@ -437,7 +440,7 @@ export class Game {
     this.handleGridKey();
     if (this.input.consumePress("KeyL")) return this.openLevelSelect();
     if (this.input.consumePress("KeyE")) return this.openEditor();
-    if (this.playtestData && this.input.consumePress("Escape")) return this.openEditor();
+    if (this.input.consumePress("Escape") && this.playtestData) return this.openEditor();
     if (this.input.consumePress("KeyR")) return this.restart();
     if (this.input.consumePress("KeyK")) this.pressNuke();
     if (this.input.consumePress("KeyN") && this.session?.outcome === "won" && !this.playtestData) return this.nextLevel();
